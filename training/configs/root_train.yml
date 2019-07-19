@@ -1,0 +1,35 @@
+# '05-12-2018'
+model:
+    arch: hg
+data:
+    dataset: camvid
+    train_split: train
+    val_split: val
+    img_rows: 'same'
+    img_cols: 'same'
+    path: /.../root/
+training:
+    train_iters: 1900000
+    batch_size: 6
+    val_interval: 500
+    n_workers: 8
+    print_interval: 100
+    optimizer:
+        name: 'rmsprop'
+        lr: 1.0e-8
+        weight_decay: 0
+        momentum: 0
+    loss:
+        name: 'cross_entropy'
+        size_average: False
+    # Augmentations Configuration
+    #augmentations:
+    #    rotate: 10                                    #[rotate -d to d degrees]
+        hflip: 0.4                                     #[flip horizontally with chance p]
+
+    lr_schedule:
+    resume: 
+            
+        
+
+
