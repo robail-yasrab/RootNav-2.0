@@ -7,6 +7,7 @@ from priority_queue import HeapPQ
 import math
 
 def AStar_Lat(start, goal, neighbor_nodes, distance, cost_estimate, weights):
+
     width, height = 512, 512 
     def idx(pos):
         return pos[1] * width + pos[0]
@@ -29,6 +30,8 @@ def AStar_Lat(start, goal, neighbor_nodes, distance, cost_estimate, weights):
     unvisited.insert(start_node)
 
     count = 0
+    aa= 0 ## to make sure not get too long roots
+    
     completed = False
     plant_id = -1
     final_goal_position = None
@@ -65,6 +68,7 @@ def AStar_Lat(start, goal, neighbor_nodes, distance, cost_estimate, weights):
             new_distance = distances[uposindex] + d * v[1]
 
             if new_distance < distances[vposindex]:
+                aa= distances[vposindex]
                 vnode = node_index[vposindex]
 
                 if vnode is None:
@@ -73,14 +77,16 @@ def AStar_Lat(start, goal, neighbor_nodes, distance, cost_estimate, weights):
                     node_index[vposindex] = vnode
                     distances[vposindex] = new_distance
                     prev[vposindex] = upos
+                    aa= distances[vposindex]
                 else:
                     unvisited.decreasekey(vnode, new_distance)
                     distances[vposindex] = new_distance
                     prev[vposindex] = upos
+                    aa= distances[vposindex]
 
         visited[uposindex] = True
 
-    if completed:
+    if completed and aa<=200:
         from collections import deque
         path = deque()
         current = final_goal_position
