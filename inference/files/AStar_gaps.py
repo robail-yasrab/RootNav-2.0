@@ -31,6 +31,7 @@ def AStar_Pri(start, goal, neighbor_nodes, distance, cost_estimate, weights):
     unvisited.insert(start_node)
 
     count = 0
+    aa= 0 ## to make sure not get too long roots
     completed = False
 
     while len(unvisited) > 0:
@@ -64,6 +65,7 @@ def AStar_Pri(start, goal, neighbor_nodes, distance, cost_estimate, weights):
             remaining = astar_weight * distance(vpos, goal)
 
             if new_distance < distances[vposindex]:
+                aa= distances[vposindex]
                 vnode = node_index[vposindex]
 
                 if vnode is None:
@@ -72,14 +74,16 @@ def AStar_Pri(start, goal, neighbor_nodes, distance, cost_estimate, weights):
                     node_index[vposindex] = vnode
                     distances[vposindex] = new_distance
                     prev[vposindex] = upos
+                    aa= distances[vposindex]
                 else:
                     unvisited.decreasekey(vnode, new_distance + remaining)
                     distances[vposindex] = new_distance
                     prev[vposindex] = upos
+                    aa= distances[vposindex]
 
         visited[uposindex] = True
 
-    if completed:
+    if completed and aa<=400:
         from collections import deque
         path = deque()
         current = goal
