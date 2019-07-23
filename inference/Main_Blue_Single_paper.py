@@ -33,7 +33,7 @@ fileExtensions = [ "jpg", "JPG", "png", "tif" ]
 
 def test():
 	for extension in fileExtensions:
-	    files = glob("./Blue_paper/Dataset/*."+extension)
+	    files = glob("./Blue_paper_single/Dataset/*."+extension)
 	    i= len(files)
 	    #print i
 	    for x in range(0, i):
@@ -343,19 +343,19 @@ def test():
 	        plt.scatter(my_list6, my_list7, s=2, marker='.', c='r')
 	        plt.show()
 	        plt.axis('off')
-	        plt.savefig('./Blue_paper/Results/'+name[:-4]+'_Spline.png')
+	        plt.savefig('./Blue_paper_single/Results/'+name[:-4]+'_Spline.png')
 	        plt.clf()
 	        plt.cla()
 	        plt.close()
 	        ######################### Genrating RSML  #########################################
 
 	        tree = ET.ElementTree(root)
-	        output_file = open('./Blue_paper/Results/'+name[:-4]+'.rsml', 'w')
+	        output_file = open('./Blue_paper_single/Results/'+name[:-4]+'.rsml', 'w')
 	        output_file.write( prettify(root))
 	        output_file.close()
 
 	        #############################Totel time per Image ######################
-	        print("Dense CRF Post Processed Mask and RSML File is Saved at: Blue_paper/Results/")
+	        print("Dense CRF Post Processed Mask and RSML File is Saved at: Blue_paper_single/Results/")
 	        t1 = time.time()
 	        total = t1-t0
 	        print ("RSML Time elapsed:", total, "\n")
