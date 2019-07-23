@@ -34,6 +34,7 @@ def AStar_Lat(start, goal, neighbor_nodes, distance, cost_estimate, weights):
     
     completed = False
     plant_id = -1
+    primary_id = -1
     final_goal_position = None
 
     while len(unvisited) > 0:
@@ -49,7 +50,10 @@ def AStar_Lat(start, goal, neighbor_nodes, distance, cost_estimate, weights):
             completed = True
             #plant_id = goal[upos]
             final_goal_position = upos
-            print (final_goal_position)
+
+            if isinstance(goal,dict):
+                primary_id = goal[upos]
+            #print (final_goal_position)
             break
 
         for v in neighbor_nodes(upos):
@@ -94,7 +98,7 @@ def AStar_Lat(start, goal, neighbor_nodes, distance, cost_estimate, weights):
             path.appendleft(current)
             current = prev[idx(current)]
 
-        return path
+        return path, primary_id
     else:
         return []
 
