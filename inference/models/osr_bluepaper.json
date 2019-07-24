@@ -1,0 +1,11 @@
+{
+    "name": "osr_bluepaper",
+    "description": "Rapeseed grown on blue paper",
+    "architecture": "hg",
+    "multi-plant": false,
+    "weights": "osr_bluepaper.pkl",
+    "spline-config": {
+        "primary": { "tension": 0.5, "spacing": 50 },
+        "lateral": { "tension": 0.5, "spacing": 20 }
+    }
+}

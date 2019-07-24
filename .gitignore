@@ -1,5 +1,5 @@
 inference/Blue_paper/
 inference/Petri_dish/
 inference/Blue_paper_single/
-inference/models/
+inference/models/*.pkl
 *.pyc
