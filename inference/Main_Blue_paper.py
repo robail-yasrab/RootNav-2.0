@@ -192,21 +192,6 @@ def test():
             
             goals = tuple(map(tuple, goals))
             
-            ###########################RSML################################
-            root = ET.Element('rsml') 
-            metadata = ET.SubElement(root, 'metadata')
-            ET.SubElement(metadata,  'version').text = "1"
-            ET.SubElement(metadata, 'unit').text = "pixel"
-            ET.SubElement(metadata, 'resolution').text = "1"
-            ET.SubElement(metadata, 'last-modified').text = "1"
-            ET.SubElement(metadata, 'software').text = "ROOT_NAV.2.0"
-            ET.SubElement(metadata, 'user').text = "Robi"
-            ET.SubElement(metadata, 'file-key').text = name[:-4]
-            scene = ET.SubElement(root, 'scene')
-            plant = ET.SubElement(scene, 'plant', id= "1", label="simple_arabidopsis_rsa")
-            ###############################################################
-            idx= len(goals)
-         
             decoded = np.asarray(decoded, dtype = np.float32)
             gray_image = cv2.cvtColor(decoded, cv2.COLOR_BGR2GRAY)
             gray_image = Image.fromarray(gray_image)
@@ -234,7 +219,7 @@ def test():
 
             lateral_tips = rrtree(a6)
             lateral_tips = lateral_tips.astype(int)   
-            lateral_tips = tuple(map(tuple, lateral_tips))
+            lateral_tips = map(tuple, lateral_tips)
 
             lateral_root_paths = x = [[] for i in range(len(primary_root_paths))]
 
