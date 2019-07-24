@@ -7,5 +7,6 @@
     "spline-config": {
         "primary": { "tension": 0.5, "spacing": 100 },
         "lateral": { "tension": 0.5, "spacing": 40 }
-    }
+    },
+    "url":"https://cvl.cs.nott.ac.uk/resources/trainedmodels/wheat_bluepaper-590050d3.pkl"
 }

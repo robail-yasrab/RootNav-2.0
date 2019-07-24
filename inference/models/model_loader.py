@@ -1,9 +1,97 @@
 import os
+import os.path
 from glob import glob
 import json
 import torch
 from .hourglass import hg
 from .utils import convert_state_dict
+import hashlib
+import tempfile
+import sys
+import shutil
+import re
+
+if sys.version_info[0] == 2:
+    from urlparse import urlparse
+    from urllib2 import urlopen
+else:
+    from urllib.request import urlopen
+    from urllib.parse import urlparse
+
+try:
+    from tqdm import tqdm
+except ImportError:
+    # fake tqdm if it's not installed
+    class tqdm(object):
+
+        def __init__(self, total=None, disable=False):
+            self.total = total
+            self.disable = disable
+            self.n = 0
+
+        def update(self, n):
+            if self.disable:
+                return
+
+            self.n += n
+            if self.total is None:
+                sys.stderr.write("\r{0:.1f} bytes".format(self.n))
+            else:
+                sys.stderr.write("\r{0:.1f}%".format(100 * self.n / float(self.total)))
+            sys.stderr.flush()
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            if self.disable:
+                return
+
+            sys.stderr.write('\n')
+
+def _download_url_to_file(url, dst, progress):
+    file_size = None
+    u = urlopen(url)
+    meta = u.info()
+    if hasattr(meta, 'getheaders'):
+        content_length = meta.getheaders("Content-Length")
+    else:
+        content_length = meta.get_all("Content-Length")
+    if content_length is not None and len(content_length) > 0:
+        file_size = int(content_length[0])
+
+    f = tempfile.NamedTemporaryFile(delete=False)
+    
+    hash_prefix = None
+    pattern = ".*\/[0-9A-Za-z_]*-(?P<hashprefix>.*)\.pkl"
+    match = re.match(pattern, url)
+    if match is not None:
+        hash_prefix = match.groupdict()['hashprefix']
+
+    try:
+        if hash_prefix is not None:
+            sha256 = hashlib.sha256()
+        with tqdm(total=file_size, disable=not progress) as pbar:
+            while True:
+                buffer = u.read(8192)
+                if len(buffer) == 0:
+                    break
+                f.write(buffer)
+                if hash_prefix is not None:
+                    sha256.update(buffer)
+                pbar.update(len(buffer))
+
+        f.close()
+        if hash_prefix is not None:
+            digest = sha256.hexdigest()
+            if digest[:len(hash_prefix)] != hash_prefix:
+                raise RuntimeError('invalid hash value (expected "{}", got "{}")'
+                                   .format(hash_prefix, digest))
+        shutil.move(f.name, dst)
+    finally:
+        f.close()
+        if os.path.exists(f.name):
+            os.remove(f.name)
 
 class ModelLoader():
     @staticmethod
@@ -44,7 +132,13 @@ class ModelLoader():
 
         # Load model
         weights_file = "{0}/{1}".format(model_dir, model_json['weights'])
-        print (weights_file)
+        if not os.path.isfile(weights_file):
+            # Attempt to download
+            print ("Model weight file not found, downloading...")
+            sys.stdout.flush()
+            _download_url_to_file(model_json['url'], weights_file, True)
+            print ("Download complete")
+            sys.stdout.flush()
 
         model = None
         if model_json['architecture'] == 'hg':
