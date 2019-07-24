@@ -7,5 +7,6 @@
     "spline-config": {
         "primary": { "tension": 0.5, "spacing": 50 },
         "lateral": { "tension": 0.5, "spacing": 20 }
-    }
+    },
+    "url":"https://cvl.cs.nott.ac.uk/resources/trainedmodels/arabidopsis_plate-8d8307d.pkl"
 }

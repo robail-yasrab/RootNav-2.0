@@ -24,6 +24,7 @@ from files.AStar_gaps import *
 from files.AStar_gaps_laterals import *
 from glob import glob
 from rsml import Spline, Plant as P, Root as R, RSMLWriter
+from models import ModelLoader
 
 
 n_classes = 6
@@ -252,10 +253,7 @@ def test():
 
 if __name__ == '__main__':
     # Setup Model
-    #model_path = "./Model/Single_blue.pkl"
-    model_path = "./models/wheat_bluepaper.pkl"
-    model = hg()
-    state = convert_state_dict(torch.load(model_path)['model_state'])
-    model.load_state_dict(state)
-    model.eval()
+    model_data = ModelLoader.get_model('wheat_bluepaper')
+    model = model_data['model']
+    exit()
     test()
