@@ -95,7 +95,7 @@ def _download_url_to_file(url, dst, progress):
 
 class ModelLoader():
     @staticmethod
-    def list_models():
+    def list_models(verbose = False):
         # Scan model Directory
         model_dir = os.path.dirname(os.path.realpath(__file__))
         files = glob("{0}/*.json".format(model_dir))
@@ -104,7 +104,11 @@ class ModelLoader():
         for file in files:
             with open(file, 'r') as f:
                 model_json = json.loads(f.read())
-                model_list.append(model_json['name'])
+                if not verbose:
+                    model_list.append(model_json['name'])
+                else:
+                    model_list.append((model_json['name'], model_json['description']))
+
 
         return model_list
 
@@ -134,7 +138,7 @@ class ModelLoader():
         weights_file = "{0}/{1}".format(model_dir, model_json['weights'])
         if not os.path.isfile(weights_file):
             # Attempt to download
-            print ("Model weight file not found, downloading...")
+            sys.stdout.write("Model weight file not found, downloading...")
             sys.stdout.flush()
             _download_url_to_file(model_json['url'], weights_file, True)
             print ("Download complete")
@@ -142,6 +146,8 @@ class ModelLoader():
 
         model = None
         if model_json['architecture'] == 'hg':
+            sys.stdout.write('Loading model...')
+            sys.stdout.flush()
             model = hg()
             if gpu:
                 state = convert_state_dict(torch.load(weights_file)['model_state'])
@@ -150,5 +156,6 @@ class ModelLoader():
             model.load_state_dict(state)
             model.eval()
             model_json['model'] = model
+            print ("Done")
 
         return model_json
