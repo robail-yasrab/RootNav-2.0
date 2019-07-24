@@ -32,7 +32,14 @@ img_size,img_size1 = 1024, 512
 t0 = time.time()
 fileExtensions = [ "jpg", "JPG", "png", "tif" ]
 
-def test():
+def run_rootnav(model_data, input_dir, output_dir):
+    
+    # Load parameters
+    model = model_data['model']
+    multi_plant = model_data['multi-plant']
+    primary_spline_params = model_data['spline-config']['primary']
+    lateral_spline_params = model_data['spline-config']['lateral']
+
     for extension in fileExtensions:
         files = glob("./Blue_paper/Dataset/*."+extension)
         i= len(files)
@@ -234,9 +241,9 @@ def test():
             # Create Plant structure
             plant = P(1, 'wheat', seed=primary_root_paths[0][0], roots = [])
             for idx, primary_root_path in enumerate(primary_root_paths):
-                l_roots = [R([(x*factor2,y*factor1) for (x,y) in path], roots = None, spline_tension = 0.5, spline_knot_spacing = 40) for path in lateral_root_paths[idx]]
+                l_roots = [R([(x*factor2,y*factor1) for (x,y) in path], roots = None, spline_tension = lateral_spline_params['tension'], spline_knot_spacing = lateral_spline_params['spacing']) for path in lateral_root_paths[idx]]
                 scaled_primary_path = [(x*factor2,y*factor1) for (x,y) in primary_root_path]
-                p_root = R(scaled_primary_path, roots = l_roots, spline_tension = 0.5, spline_knot_spacing = 100)
+                p_root = R(scaled_primary_path, roots = l_roots, spline_tension = primary_spline_params['tension'], spline_knot_spacing = primary_spline_params['spacing'])
                 plant.roots.append(p_root)
 
             rsml_text = RSMLWriter.save(name[:-4], [plant])
@@ -251,9 +258,40 @@ def test():
             total = t1-t0
             print ("RSML Time elapsed:", total, "\n")
 
+def list_models():
+    print ("Model     \t\tDescription")
+    for name, desc in ModelLoader.list_models(True):
+        print("{0}\t\t{1}".format(name,desc))
+
 if __name__ == '__main__':
-    # Setup Model
-    model_data = ModelLoader.get_model('wheat_bluepaper')
-    model = model_data['model']
-    exit()
-    test()
+    print("RootNav 2.0")
+    sys.stdout.flush()
+
+    # Parser Args
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-l', '--list', action='store_true', default=False, help='List available models and exit')
+    parser.add_argument('--model', default="wheat_bluepaper", metavar='M', help="The trained model to use (default wheat_bluepaper)")
+    parser.add_argument('input_dir', type=str, help='Input directory', nargs="?")
+    parser.add_argument('output_dir', type=str, help='Output directory', nargs="?")
+
+    args = parser.parse_args()
+
+    # If list, show and exit
+    if args.list:
+        list_models()
+        exit()
+
+    # Input and output directory are required
+    if not args.input_dir or not args.output_dir:
+        parser.print_help()
+        exit()
+
+    # Load the model
+    try:
+        model_data = ModelLoader.get_model(args.model)
+    except Exception as ex:
+        print (ex)
+        exit()
+
+    # Process
+    run_rootnav(model_data, args.input_dir, args.output_dir)
