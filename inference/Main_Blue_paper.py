@@ -206,14 +206,7 @@ def test():
             plant = ET.SubElement(scene, 'plant', id= "1", label="simple_arabidopsis_rsa")
             ###############################################################
             idx= len(goals)
-            #print idx
-
-            my_list1 = []
-            my_list2 = []
-            my_list11 = []
-            my_list12 = []
-
-            
+         
             decoded = np.asarray(decoded, dtype = np.float32)
             gray_image = cv2.cvtColor(decoded, cv2.COLOR_BGR2GRAY)
             gray_image = Image.fromarray(gray_image)
@@ -226,20 +219,9 @@ def test():
             primary_root_paths = []
 
             for idx, i in enumerate(goals):
-                my_list1.append([])
-                my_list2.append([])
-                my_list11.append([])
-                my_list12.append([])
                 path = AStar_Pri(start, i, von_neumann_neighbors, distance, heuristic, weights)
                 if path !=[]:
                     primary_root_paths.append(path)
-                    for position in path:
-                        x,y = position
-                        my_list11[idx].append(x)
-                        my_list12[idx].append(y)
-                        x,y = float((x)*factor2), float((y)*factor1)
-                        my_list1[idx].append(x)
-                        my_list2[idx].append(y)
 
             lateral_goals = [(idx,position) for idx, primary in enumerate(primary_root_paths) for position in primary]
             lateral_goal_dict = {}
@@ -247,38 +229,19 @@ def test():
                 if position not in lateral_goal_dict:
                     lateral_goal_dict[position] = idx
 
-            Lat_goal = [position for (idx,position) in lateral_goals]
-
             lat_gt_mask = decode_segmap3(np.array(mask, dtype=np.uint8))           
             img3= distance_to_weights(lat_gt_mask)            
 
-            goal = rrtree(a6)
-            goal = goal.astype(int)   
-            goal = tuple(map(tuple, goal))
+            lateral_tips = rrtree(a6)
+            lateral_tips = lateral_tips.astype(int)   
+            lateral_tips = tuple(map(tuple, lateral_tips))
 
-            my_list4 = []
-            my_list5 = []
-            
             lateral_root_paths = x = [[] for i in range(len(primary_root_paths))]
 
-            for idxx, i in enumerate(goal):
-                my_list4.append([])
-                my_list5.append([])
-                path, _ = AStar_Lat(i, Lat_goal, von_neumann_neighbors, distance, heuristic, img3)
-                path2, pid = AStar_Lat(i, lateral_goal_dict, von_neumann_neighbors, distance, heuristic, img3)
-                print (path[0], path[-1])
-                print (path2[0], path2[-1])
-                print ("\n")
+            for idxx, i in enumerate(lateral_tips):
+                path, pid = AStar_Lat(i, lateral_goal_dict, von_neumann_neighbors, distance, heuristic, img3)
                 if path !=[]:
-                    path = list(reversed(path))
-
-                    lateral_root_paths[pid].append(list(reversed(path2)))
-
-                    for position in path:
-                        x,y = position
-                        x,y = float((x)*factor2), float((y)*factor1)
-                        my_list4[idxx].append(x)
-                        my_list5[idxx].append(y)
+                    lateral_root_paths[pid].append(list(reversed(path)))
                 else:
                     pass
 
@@ -291,73 +254,9 @@ def test():
                 plant.roots.append(p_root)
 
             rsml_text = RSMLWriter.save(name[:-4], [plant])
-            #print (rsml_text)
-
 
             output_file = open('./Blue_paper/Results/'+name[:-4]+'.rsml', 'w')
             output_file.write(rsml_text)
-            output_file.close()
-
-
-            exit()
-
-
-                ################################### Primary Root ##################################
-            count_lat = []
-            for l,m in zip(my_list1, my_list2):
-                print("PRIMARY")
-                idx= my_list1.index(l)
-                c = np.array(l)
-                d = np.array(m)
-                if c!=[] and d!=[]:
-                    priroot = ET.SubElement(plant, 'root', id=str(idx), label="primary", poaccession="1")
-                    geometry = ET.SubElement(priroot, 'geometry')
-                    polyline = ET.SubElement(geometry, 'polyline')
-                    rootnavspline = ET.SubElement(geometry, 'rootnavspline', controlpointseparation= "100", tension="0.5")
-                    points = [] 
-                    for a, b in zip(c, d):
-                        points.append((a, b))
-                        #print points
-                        point = ET.SubElement(polyline, 'point', x=str(a), y=str(b))
-                    s = Spline(points, tension = 0.5, knot_spacing = 100)
-                    poly = s.polyline(sample_spacing = 1)
-                    for c in s.knots:
-                        point = ET.SubElement(rootnavspline, 'point', x=str(c[0]), y=str(c[1]))
-
-                ################################### Latral Root ##################################
-                for g,h in zip(l,m):
-                    x, y = g, h
-                    neighbors = [(x, y)]
-                    for s,t in zip(my_list4, my_list5):
-                        id_lat= my_list4.index(s)
-                        for p in neighbors:
-                            s= map(int, s)
-                            t= map(int, t)
-
-                            if int(p[0]) in s and int(p[1]) in t and id_lat not in count_lat and p[0]!=[] and p[1]!=[]:
-                                print("\tLATERAL")
-                                count_lat.append(id_lat)
-                                idxxx= str(idx)+"."+str(id_lat)
-                                secroot = ET.SubElement(priroot, 'root', ID=idxxx, label="lat")
-                                geometry = ET.SubElement(secroot, 'geometry')
-                                polyline = ET.SubElement(geometry, 'polyline')
-                                rootnavspline = ET.SubElement(geometry, 'rootnavspline', controlpointseparation= "40", tension="0.5")
-                                pointss = [] 
-                                for n, p in zip(s, t):
-                                    pointss.append((n, p))
-                                    n = np.array(n)
-                                    p = np.array(p)
-                                    point = ET.SubElement(polyline, 'point', x=str(n), y=str(p))
-                                ss = Spline(pointss, tension = 0.5, knot_spacing = 40)
-                                polyy = ss.polyline(sample_spacing = 1)
-                                for cc in  polyy:
-                                    point = ET.SubElement(rootnavspline, 'point', x=str(cc[0]), y=str(cc[1]))
-                                
-            ######################### Genrating RSML  #########################################
-
-            tree = ET.ElementTree(root)
-            output_file = open('./Blue_paper/Results/'+name[:-4]+'.rsml', 'w')
-            output_file.write( prettify(root))
             output_file.close()
 
             #############################Totel time per Image ######################
@@ -365,7 +264,6 @@ def test():
             t1 = time.time()
             total = t1-t0
             print ("RSML Time elapsed:", total, "\n")
-            exit()
 
 if __name__ == '__main__':
     # Setup Model
