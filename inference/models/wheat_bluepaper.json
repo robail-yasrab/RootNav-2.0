@@ -1,0 +1,11 @@
+{
+    "name": "wheat_bluepaper",
+    "description": "Wheat grown on blue paper",
+    "architecture": "hg",
+    "multi-plant": false,
+    "weights": "wheat_bluepaper.pkl",
+    "spline-config": {
+        "primary": { "tension": 0.5, "spacing": 100 },
+        "lateral": { "tension": 0.5, "spacing": 40 }
+    }
+}
