@@ -1,6 +1,7 @@
 import xml.etree.cElementTree as ET
 from xml.dom import minidom
 from xml.etree import ElementTree
+import os.path
 
 def prettify(elem):
     """Return a pretty-printed XML string for the Element.
@@ -11,7 +12,7 @@ def prettify(elem):
 
 class RSMLWriter():
     @staticmethod
-    def save(key, plants):
+    def save(key, output_dir, plants):
         root = ET.Element('rsml') 
         metadata = ET.SubElement(root, 'metadata')
         ET.SubElement(metadata,  'version').text = "1"
@@ -55,4 +56,8 @@ class RSMLWriter():
                         point = ET.SubElement(lat_polyline, 'point', x=str(pt[0]), y=str(pt[0]))
 
         tree = ET.ElementTree(root)
-        return prettify(root)
+        rsml_text = prettify(root)
+
+        output_path = os.path.join(output_dir, "{0}.rsml".format(key))
+        with open (output_path, 'w') as f:
+            f.write(rsml_text)
