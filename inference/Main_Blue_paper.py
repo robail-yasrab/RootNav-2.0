@@ -76,7 +76,6 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
                 model.cuda(0)
                 images = Variable(img.cuda(0), requires_grad=True)
             else:
-                print ("CPU")
                 images = Variable(img, requires_grad=True)
 
             ######################## MODEL FORWARD #################################
@@ -134,7 +133,7 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
             d.addPairwiseBilateral(sxy=5, srgb=3, rgbim=resized_img, compat=1)
             q = d.inference(50)
             mask = np.argmax(q, axis=0).reshape(w, h).transpose(1, 0)
-            enlarge(mask, realw, realh, name)
+            enlarge(mask, realw, realh, key, output_dir)
             decoded_crf = decode_segmap(np.array(mask, dtype=np.uint8))
 
             pred = np.squeeze(res1.data.max(1)[1].cpu().numpy(), axis=0)
@@ -210,7 +209,7 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
             for idx, position in lateral_goals:
                 if position not in lateral_goal_dict:
                     lateral_goal_dict[position] = idx
-
+            
             lat_gt_mask = decode_segmap3(np.array(mask, dtype=np.uint8))           
             img3= distance_to_weights(lat_gt_mask)            
 

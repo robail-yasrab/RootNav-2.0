@@ -100,7 +100,7 @@ def AStar_Lat(start, goal, neighbor_nodes, distance, cost_estimate, weights):
 
         return path, primary_id
     else:
-        return []
+        return [],[]
 
 rt2 = math.sqrt(2)
 
