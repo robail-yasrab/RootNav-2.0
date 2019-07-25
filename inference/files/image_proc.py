@@ -3,8 +3,9 @@ import mahotas
 import cv2
 import scipy.misc as misc
 from PIL import Image
+import os.path
 n_classes = 6
-def enlarge(mask, realw, realh, name):
+def enlarge(mask, realw, realh, key, output_dir):
 
     ######################## COLOR GT #################################
     decoded = decode_segmap(np.array(mask, dtype=np.uint8))
@@ -13,19 +14,19 @@ def enlarge(mask, realw, realh, name):
     wpercent = (basewidth / float(decoded.size[0]))
     hsize = int(realh)
     decoded = decoded.resize((basewidth, hsize), Image.ANTIALIAS)
-    decoded.save('./Blue_paper/Results/'+name[:-4]+'_Color_output.png')
+    decoded.save(os.path.join(output_dir, "{0}_Color_output.png".format(key)))
     ######################## primery root GT ###########################
     decoded1 = decode_segmap3(np.array(mask, dtype=np.uint8))
     decoded1 = Image.fromarray(np.uint8(decoded1*255))
     decoded1 = decoded1.resize((basewidth, hsize), Image.ANTIALIAS)
     decoded1= decoded1.convert('L') 
-    decoded1.save('./Blue_paper/Results/'+name[:-4]+'_C2.png')
+    decoded1.save(os.path.join(output_dir, "{0}_C2.png".format(key)))
     ######################## Lat root GT ###########################
     decoded2 = decode_segmap4(np.array(mask, dtype=np.uint8))
     decoded2 = Image.fromarray(np.uint8(decoded2*255))
     decoded2 = decoded2.resize((basewidth, hsize), Image.ANTIALIAS)  
     decoded2= decoded2.convert('L') 
-    decoded2.save('./Blue_paper/Results/'+name[:-4]+'_C1.png') 
+    decoded2.save(os.path.join(output_dir, "{0}_C1.png".format(key))) 
 
 
 '''def distance_map(decoded):
@@ -87,7 +88,6 @@ def distance_to_weights(decoded):
     d[(bw == 0)] = background_penalty
 
     return d
-
 
 def ext_color1(decoded_crf, my_list1, my_list2):
     decoded_crf= decoded_crf* 255.0  
