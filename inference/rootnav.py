@@ -142,49 +142,12 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
             ######################## COLOR GT #################################
 
             ######################## PRIMARY ROOT ###########################
-            trees = []
-            if a4!=[]:
-                ax= np.concatenate((a4, a5), axis=1)
-                output_points= np.asarray(ax,  dtype = np.float32)
-            else:
-                output_points= np.asarray(a5,  dtype = np.float32)
             
-            
+            seed_locations = rrtree(a4.squeeze(), 36)
+            lateral_tips = rrtree(a5.squeeze(), 36)
 
-
-            for c in range(len(output_points)):
-                idx = index.Index(interleaved=False)
-                distance_threshold = 36 # 8^2
-                for i,pt in enumerate(output_points[c]):
-                    neighbour = next(idx.nearest((pt[0],pt[0],pt[1],pt[1])),None)
-                    if neighbour is None:
-                        idx.insert(i, (pt[0], pt[0], pt[1], pt[1]))
-                    else:
-                        n_pt = output_points[c][neighbour]
-                        if ((pt[0] - n_pt[0])**2 + (pt[1] - n_pt[1])**2) > distance_threshold:
-                            idx.insert(i, (pt[0], pt[0], pt[1], pt[1]))
-                trees.append(idx)
-
-                trees= np.asarray(trees)
-
-            counts = []
-            channel_points=[]
-            for c in range(len(output_points)):
-                channel_points = [output_points[c][pt] for pt in trees[c].intersection((-1,512,-1,512))]
-            channel_points = np.asarray(channel_points)
-            
-
-            (h, w)= channel_points.shape  
-            if a4!=[]:           
-                start = channel_points[0].astype(int)
-                goals = channel_points[1:h].astype(int)
-                start = tuple(start)
-            else:
-                start =(218, 41)
-                goals = channel_points.astype(int)
-
-            
-            goals = tuple(map(tuple, goals))
+            start = seed_locations[0]
+            goals = lateral_tips
             
             decoded = np.asarray(decoded, dtype = np.float32)
             gray_image = cv2.cvtColor(decoded, cv2.COLOR_BGR2GRAY)
@@ -211,9 +174,7 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
             lat_gt_mask = decode_segmap3(np.array(mask, dtype=np.uint8))           
             img3= distance_to_weights(lat_gt_mask)            
 
-            print (a6)
             lateral_tips = rrtree(a6, 36)
-            print (lateral_tips)
             lateral_root_paths = [[] for i in range(len(primary_root_paths))]
 
             for idxx, i in enumerate(lateral_tips):
