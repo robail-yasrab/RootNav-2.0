@@ -1,6 +1,6 @@
 
 import numpy as np
-import mahotas
+#import mahotas
 import cv2
 import scipy.misc as misc
 from PIL import Image
