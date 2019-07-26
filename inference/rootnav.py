@@ -10,7 +10,6 @@ import pydensecrf.densecrf as dcrf
 import matplotlib.pyplot as plt
 import xml.etree.cElementTree as ET
 from PIL import Image
-from rtree import index
 from torch.autograd import Variable
 from torch.utils import data
 from files.hourglass import hg
@@ -111,8 +110,7 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
             a1 = a5.squeeze(0)
                         
             a6 = channel_results[0]
-            a6 = np.asarray(a6) # latrl tip
-            a2 = a6.squeeze(0)
+            a6 = np.asarray(a6).squeeze(0) # latrl tip
 
             n = F.softmax(res1, dim=1)
 
@@ -213,11 +211,10 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
             lat_gt_mask = decode_segmap3(np.array(mask, dtype=np.uint8))           
             img3= distance_to_weights(lat_gt_mask)            
 
-            lateral_tips = rrtree(a6)
-            lateral_tips = lateral_tips.astype(int)   
-            lateral_tips = map(tuple, lateral_tips)
-
-            lateral_root_paths = x = [[] for i in range(len(primary_root_paths))]
+            print (a6)
+            lateral_tips = rrtree(a6, 36)
+            print (lateral_tips)
+            lateral_root_paths = [[] for i in range(len(primary_root_paths))]
 
             for idxx, i in enumerate(lateral_tips):
                 path, pid = AStar_Lat(i, lateral_goal_dict, von_neumann_neighbors, distance, heuristic, img3)
