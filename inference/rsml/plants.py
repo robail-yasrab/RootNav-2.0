@@ -1,11 +1,11 @@
 from .splines import Spline
 
 class Plant():
-    def __init__(self, id, label, seed=None, roots = []):
+    def __init__(self, id, label, seed=None, roots = None):
         self.id = id
         self.label = label
         self.seed = seed
-        self.roots = roots
+        self.roots = roots if roots is not None else []
 
     def all_roots(self):
         for r in self.roots:
@@ -27,8 +27,8 @@ class Plant():
                 yield c
 
 class Root():
-    def __init__(self, points, roots = [], spline_tension = 0.5, spline_knot_spacing = 50):
-        self.roots = roots
+    def __init__(self, points, roots = None, spline_tension = 0.5, spline_knot_spacing = 50):
+        self.roots = roots if roots is not None else []
         self.start = points[0]
         self.end = points[-1]
         self.spline = Spline(points, spline_tension, spline_knot_spacing)

@@ -143,11 +143,11 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
 
             ######################## PRIMARY ROOT ###########################
             
+            # Filter seed and primary tip locations
             seed_locations = rrtree(a4.squeeze(), 36)
-            lateral_tips = rrtree(a5.squeeze(), 36)
+            primary_tips = rrtree(a5.squeeze(), 36)
 
             start = seed_locations[0]
-            goals = lateral_tips
             
             decoded = np.asarray(decoded, dtype = np.float32)
             gray_image = cv2.cvtColor(decoded, cv2.COLOR_BGR2GRAY)
@@ -158,40 +158,36 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
             pri_gt_mask = decode_segmap4(np.array(mask, dtype=np.uint8))
             weights = distance_map(pri_gt_mask) #distance map
             
-            primary_root_paths = []
-
-            for idx, i in enumerate(goals):
-                path = AStar_Pri(start, i, von_neumann_neighbors, distance, heuristic, weights)
-                if path !=[]:
-                    primary_root_paths.append(path)
-
-            lateral_goals = [(idx,position) for idx, primary in enumerate(primary_root_paths) for position in primary]
             lateral_goal_dict = {}
-            for idx, position in lateral_goals:
-                if position not in lateral_goal_dict:
-                    lateral_goal_dict[position] = idx
-            
+
+            # Create Plant structure
+            plant = Plant(1, 'wheat', seed=start)
+
+            # Search across primary roots
+            for tip in primary_tips:
+                path = AStar_Pri(start, tip, von_neumann_neighbors, distance, heuristic, weights)
+                if path !=[]:
+                    scaled_primary_path = [(x*factor2,y*factor1) for (x,y) in path]
+                    plant.roots.append(Root(scaled_primary_path, spline_tension = primary_spline_params['tension'], spline_knot_spacing = primary_spline_params['spacing']))
+                    current_pid = len(plant.roots) - 1
+                    for pt in path:
+                        lateral_goal_dict[pt] = current_pid
+
             lat_gt_mask = decode_segmap3(np.array(mask, dtype=np.uint8))           
             img3= distance_to_weights(lat_gt_mask)            
 
+            # Filter candidate lateral root tips
             lateral_tips = rrtree(a6, 36)
-            lateral_root_paths = [[] for i in range(len(primary_root_paths))]
 
+            # Search across lateral roots
             for idxx, i in enumerate(lateral_tips):
                 path, pid = AStar_Lat(i, lateral_goal_dict, von_neumann_neighbors, distance, heuristic, img3)
                 if path !=[]:
-                    lateral_root_paths[pid].append(list(reversed(path)))
-                else:
-                    pass
+                    scaled_lateral_path = [(x*factor2,y*factor1) for (x,y) in reversed(path)]
+                    lateral_root = Root(scaled_lateral_path, spline_tension = lateral_spline_params['tension'], spline_knot_spacing = lateral_spline_params['spacing'])
+                    plant.roots[pid].roots.append(lateral_root)
 
-            # Create Plant structure
-            plant = Plant(1, 'wheat', seed=primary_root_paths[0][0], roots = [])
-            for idx, primary_root_path in enumerate(primary_root_paths):
-                l_roots = [Root([(x*factor2,y*factor1) for (x,y) in path], roots = None, spline_tension = lateral_spline_params['tension'], spline_knot_spacing = lateral_spline_params['spacing']) for path in lateral_root_paths[idx]]
-                scaled_primary_path = [(x*factor2,y*factor1) for (x,y) in primary_root_path]
-                p_root = Root(scaled_primary_path, roots = l_roots, spline_tension = primary_spline_params['tension'], spline_knot_spacing = primary_spline_params['spacing'])
-                plant.roots.append(p_root)
-
+            # Output to RSML
             RSMLWriter.save(key, output_dir, [plant])
 
             ############################# Total time per Image ######################
