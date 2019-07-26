@@ -7,8 +7,6 @@ import time
 import math
 import torch
 import shutil
-import visdom
-from rtree import index
 import random
 import argparse
 import datetime
@@ -18,7 +16,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
 import scipy.misc as misc
-from skimage import io, transform
+#from skimage import io, transform
 import numpy as np
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
@@ -27,8 +25,6 @@ from torch.utils import data
 from tqdm import tqdm
 import cv2
 
-
-from tensorboardX import SummaryWriter
 #weights = [0.5794, 3.6466, 0.0041, 25.7299]
 
 #######################################################################

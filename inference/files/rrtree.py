@@ -1,6 +1,5 @@
 import sys, os
 import torch
-import visdom
 import argparse
 import numpy as np
 import scipy.misc as misc
@@ -19,7 +18,7 @@ def euclid(pt1, pt2):
 def rrtree(lat, threshold):
     if lat is None or len(lat) == 0:
         return []
-        
+
     tree = kdtree.create(dimensions=2)
     distance_threshold = threshold # 8^2
     for i,pt in enumerate(lat):
