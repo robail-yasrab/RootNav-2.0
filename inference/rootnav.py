@@ -138,25 +138,15 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
             decoded = decode_segmap1(pred) 
             decoded= np.asarray(decoded, dtype=np.float32)
             ###################################################################
-
-            ######################## COLOR GT #################################
-
-            ######################## PRIMARY ROOT ###########################
             
             # Filter seed and primary tip locations
             seed_locations = rrtree(a4.squeeze(), 36)
             primary_tips = rrtree(a5.squeeze(), 36)
-
             start = seed_locations[0]
             
-            decoded = np.asarray(decoded, dtype = np.float32)
-            gray_image = cv2.cvtColor(decoded, cv2.COLOR_BGR2GRAY)
-            gray_image = Image.fromarray(gray_image)
-            path_pixels = gray_image.load()
-            distance = manhattan
-            heuristic = manhattan
+            # Primary weighted graph
             pri_gt_mask = decode_segmap4(np.array(mask, dtype=np.uint8))
-            weights = distance_map(pri_gt_mask) #distance map
+            weights = distance_map(pri_gt_mask)     
             
             lateral_goal_dict = {}
 
@@ -165,7 +155,7 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
 
             # Search across primary roots
             for tip in primary_tips:
-                path = AStar_Pri(start, tip, von_neumann_neighbors, distance, heuristic, weights)
+                path = AStar_Pri(start, tip, von_neumann_neighbors, manhattan, manhattan, weights)
                 if path !=[]:
                     scaled_primary_path = [(x*factor2,y*factor1) for (x,y) in path]
                     plant.roots.append(Root(scaled_primary_path, spline_tension = primary_spline_params['tension'], spline_knot_spacing = primary_spline_params['spacing']))
@@ -173,15 +163,16 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
                     for pt in path:
                         lateral_goal_dict[pt] = current_pid
 
+            # Lateral weighted graph
             lat_gt_mask = decode_segmap3(np.array(mask, dtype=np.uint8))           
-            img3= distance_to_weights(lat_gt_mask)            
+            weights = distance_to_weights(lat_gt_mask)            
 
             # Filter candidate lateral root tips
             lateral_tips = rrtree(a6, 36)
 
             # Search across lateral roots
             for idxx, i in enumerate(lateral_tips):
-                path, pid = AStar_Lat(i, lateral_goal_dict, von_neumann_neighbors, distance, heuristic, img3)
+                path, pid = AStar_Lat(i, lateral_goal_dict, von_neumann_neighbors, manhattan, manhattan, weights)
                 if path !=[]:
                     scaled_lateral_path = [(x*factor2,y*factor1) for (x,y) in reversed(path)]
                     lateral_root = Root(scaled_lateral_path, spline_tension = lateral_spline_params['tension'], spline_knot_spacing = lateral_spline_params['spacing'])
