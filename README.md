@@ -16,7 +16,7 @@ Many thanks for all the interest in this repository! Since our preprint was rele
 * More documentation!
 
 ### Longer term features
-* Additional trained models. If you have datasets you'd like to see work with the tool and aren't covered by our examples, please get in touch and we can c
+* Additional trained models. If you have datasets you'd like to see work with the tool and aren't covered by our examples, please get in touch and we can collaborate!
 
 ## Using the tool
 
