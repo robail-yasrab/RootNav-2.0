@@ -24,6 +24,7 @@ from files.AStar_gaps_laterals import *
 from glob import glob
 from rsml import Spline, Plant, Root, RSMLWriter
 from models import ModelLoader
+from crf import CRF
 
 
 n_classes = 6
@@ -79,11 +80,25 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
 
             ######################## MODEL FORWARD #################################
             model_output = model(images)[-1].data.cpu()
+            model_softmax = F.softmax(model_output, dim=1)
             
             batch_count = model_output.size(0)
             if batch_count > 1:
                 raise Exception("Batch size returned is greater than 1")
+            
+            ################################# CRF ##################################
+            # Apply CRF
+            mask = CRF.ApplyCRF(model_softmax.squeeze(0).numpy(),resized_img)
+            enlarge(mask, realw, realh, key, output_dir)
 
+            # Primary weighted graph
+            pri_gt_mask = decode_segmap4(np.array(mask, dtype=np.uint8))
+            primary_weights = distance_map(pri_gt_mask)
+
+            # Lateral weighted graph
+            lat_gt_mask = decode_segmap3(np.array(mask, dtype=np.uint8))           
+            lateral_weights = distance_to_weights(lat_gt_mask)
+                     
             ########################## PROCESS HEATMAPS ############################
             channel_config = model_data['channel-bindings']
             heatmap_config = model_data['channel-bindings']['heatmap']
@@ -94,41 +109,11 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
             for idx, binding_key in enumerate(heatmap_index):
                 heatmap_points[binding_key] = nonmaximalsuppression(heatmap_output[0][idx], 0.7)
 
-            n = F.softmax(model_output, dim=1)
-
-            ########################### CRF #################################
-            unary = n.data.cpu().numpy()
-            unary = np.squeeze(unary, 0)
-            unary = -np.log(unary)
-            unary = unary.transpose(2, 1, 0)
-            w, h, c = unary.shape
-            #print c.shape 
-            unary = unary.transpose(2, 0, 1).reshape(6, -1)
-            unary = np.ascontiguousarray(unary)
-           
-            resized_img = np.ascontiguousarray(resized_img)
-
-            d = dcrf.DenseCRF2D(w, h, 6)
-            d.setUnaryEnergy(unary)
-            d.addPairwiseBilateral(sxy=5, srgb=3, rgbim=resized_img, compat=1)
-            q = d.inference(50)
-            mask = np.argmax(q, axis=0).reshape(w, h).transpose(1, 0)
-            enlarge(mask, realw, realh, key, output_dir)
-            decoded_crf = decode_segmap(np.array(mask, dtype=np.uint8))
-
-            pred = np.squeeze(model_output.data.max(1)[1].cpu().numpy(), axis=0)
-            decoded = decode_segmap1(pred) 
-            decoded= np.asarray(decoded, dtype=np.float32)
-            ###################################################################
-            
+            ############################# PATH FINDING #############################
             # Filter seed and primary tip locations
             seed_locations = rrtree(heatmap_points['Seed'], 36)
             primary_tips = rrtree(heatmap_points['Primary'], 36)
-            start = seed_locations[0]
-            
-            # Primary weighted graph
-            pri_gt_mask = decode_segmap4(np.array(mask, dtype=np.uint8))
-            weights = distance_map(pri_gt_mask)     
+            start = seed_locations[0]  
             
             lateral_goal_dict = {}
 
@@ -137,24 +122,20 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
 
             # Search across primary roots
             for tip in primary_tips:
-                path = AStar_Pri(start, tip, von_neumann_neighbors, manhattan, manhattan, weights)
+                path = AStar_Pri(start, tip, von_neumann_neighbors, manhattan, manhattan, primary_weights)
                 if path !=[]:
                     scaled_primary_path = [(x*factor2,y*factor1) for (x,y) in path]
                     plant.roots.append(Root(scaled_primary_path, spline_tension = primary_spline_params['tension'], spline_knot_spacing = primary_spline_params['spacing']))
                     current_pid = len(plant.roots) - 1
                     for pt in path:
-                        lateral_goal_dict[pt] = current_pid
-
-            # Lateral weighted graph
-            lat_gt_mask = decode_segmap3(np.array(mask, dtype=np.uint8))           
-            weights = distance_to_weights(lat_gt_mask)            
+                        lateral_goal_dict[pt] = current_pid        
 
             # Filter candidate lateral root tips
             lateral_tips = rrtree(heatmap_points['Lateral'], 36)
 
             # Search across lateral roots
             for idxx, i in enumerate(lateral_tips):
-                path, pid = AStar_Lat(i, lateral_goal_dict, von_neumann_neighbors, manhattan, manhattan, weights)
+                path, pid = AStar_Lat(i, lateral_goal_dict, von_neumann_neighbors, manhattan, manhattan, lateral_weights)
                 if path !=[]:
                     scaled_lateral_path = [(x*factor2,y*factor1) for (x,y) in reversed(path)]
                     lateral_root = Root(scaled_lateral_path, spline_tension = lateral_spline_params['tension'], spline_knot_spacing = lateral_spline_params['spacing'])
