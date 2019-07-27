@@ -8,5 +8,9 @@
         "primary": { "tension": 0.5, "spacing": 50 },
         "lateral": { "tension": 0.5, "spacing": 20 }
     },
-    "url":"https://cvl.cs.nott.ac.uk/resources/trainedmodels/osr_bluepaper-c4788d86.pkl"
+    "url":"https://cvl.cs.nott.ac.uk/resources/trainedmodels/osr_bluepaper-c4788d86.pkl",
+    "channel-bindings": {
+        "segmentation": { "Background": 0, "Primary": 1, "Lateral": 3 },
+        "heatmap": { "Seed": 5, "Primary": 4, "Lateral": 2 }
+    }
 }
