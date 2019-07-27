@@ -78,41 +78,23 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
                 images = Variable(img, requires_grad=True)
 
             ######################## MODEL FORWARD #################################
-            m = model(images)
-
-            res1 = m[-1]
-            #m = m.unsqueeze(0)
-            out3= res1[:,3:4,:,:] # sec root          
-            out1= res1[:,1:2,:,:] # pri root 
-            out0= res1[:,0:1,:,:] # back
+            model_output = model(images)[-1].data.cpu()
             
-            out5= res1[:,5:6,:,:] # seed         
-            out4= res1[:,4:5,:,:] # pri tip
-            out2= res1[:,2:3,:,:] # latral tip    
-            o = torch.cat((out2, out4, out5), 1)
-            o1 = torch.cat((out0, out1, out3), 1)
+            batch_count = model_output.size(0)
+            if batch_count > 1:
+                raise Exception("Batch size returned is greater than 1")
 
-            output_heatmap = o.data.cpu()
-            batch_count = output_heatmap.size(0)
-            channel_count = output_heatmap.size(1)
-            channel_results = []
-            for channel in range(0,channel_count):
-                for batch in range(0,batch_count):
-                    prpoints = nonmaximalsuppression(output_heatmap[batch][channel], 0.7)
-                    channel_results.append([prpoints])  
+            ########################## PROCESS HEATMAPS ############################
+            channel_config = model_data['channel-bindings']
+            heatmap_config = model_data['channel-bindings']['heatmap']
+            heatmap_index = ['Seed', 'Primary', 'Lateral']
+            heatmap_output = model_output.index_select(1,torch.LongTensor([heatmap_config[i] for i in heatmap_index]))
+            
+            heatmap_points = {}
+            for idx, binding_key in enumerate(heatmap_index):
+                heatmap_points[binding_key] = nonmaximalsuppression(heatmap_output[0][idx], 0.7)
 
-            a4 = channel_results[2]
-            a4 = np.asarray(a4) #seed
-            a = a4.squeeze(0)
-           
-            a5 = channel_results[1]
-            a5 = np.asarray(a5) #pri tip
-            a1 = a5.squeeze(0)
-                        
-            a6 = channel_results[0]
-            a6 = np.asarray(a6).squeeze(0) # latrl tip
-
-            n = F.softmax(res1, dim=1)
+            n = F.softmax(model_output, dim=1)
 
             ########################### CRF #################################
             unary = n.data.cpu().numpy()
@@ -134,14 +116,14 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
             enlarge(mask, realw, realh, key, output_dir)
             decoded_crf = decode_segmap(np.array(mask, dtype=np.uint8))
 
-            pred = np.squeeze(res1.data.max(1)[1].cpu().numpy(), axis=0)
+            pred = np.squeeze(model_output.data.max(1)[1].cpu().numpy(), axis=0)
             decoded = decode_segmap1(pred) 
             decoded= np.asarray(decoded, dtype=np.float32)
             ###################################################################
             
             # Filter seed and primary tip locations
-            seed_locations = rrtree(a4.squeeze(), 36)
-            primary_tips = rrtree(a5.squeeze(), 36)
+            seed_locations = rrtree(heatmap_points['Seed'], 36)
+            primary_tips = rrtree(heatmap_points['Primary'], 36)
             start = seed_locations[0]
             
             # Primary weighted graph
@@ -168,7 +150,7 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
             weights = distance_to_weights(lat_gt_mask)            
 
             # Filter candidate lateral root tips
-            lateral_tips = rrtree(a6, 36)
+            lateral_tips = rrtree(heatmap_points['Lateral'], 36)
 
             # Search across lateral roots
             for idxx, i in enumerate(lateral_tips):

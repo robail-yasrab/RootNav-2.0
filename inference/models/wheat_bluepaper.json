@@ -8,5 +8,9 @@
         "primary": { "tension": 0.5, "spacing": 100 },
         "lateral": { "tension": 0.5, "spacing": 40 }
     },
-    "url":"https://cvl.cs.nott.ac.uk/resources/trainedmodels/wheat_bluepaper-590050d3.pkl"
+    "url":"https://cvl.cs.nott.ac.uk/resources/trainedmodels/wheat_bluepaper-590050d3.pkl",
+    "channel-bindings": {
+        "segmentation": { "Background": 0, "Primary": 1, "Lateral": 3 },
+        "heatmap": { "Seed": 5, "Primary": 4, "Lateral": 2 }
+    }
 }
