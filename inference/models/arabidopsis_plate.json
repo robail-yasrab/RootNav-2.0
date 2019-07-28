@@ -12,5 +12,10 @@
     "channel-bindings": {
         "segmentation": { "Background": 0, "Primary": 1, "Lateral": 3 },
         "heatmap": { "Seed": 5, "Primary": 4, "Lateral": 2 }
+    },
+    "net-config": {
+        "scale": 1,
+        "input-size": 1024,
+        "output-size": 512
     }
 }
