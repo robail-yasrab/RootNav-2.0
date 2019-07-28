@@ -7,8 +7,7 @@ import os.path
 from crf import CRF
 
 n_classes = 6
-def enlarge(mask, realw, realh, key, output_dir):
-
+def enlarge(mask, realw, realh, key, channel_bindings, output_dir):
     ######################## COLOR GT #################################
     decoded = decode_segmap(np.array(mask, dtype=np.uint8))
     decoded = Image.fromarray(np.uint8(decoded*255))
@@ -18,13 +17,13 @@ def enlarge(mask, realw, realh, key, output_dir):
     decoded = decoded.resize((basewidth, hsize), Image.ANTIALIAS)
     decoded.save(os.path.join(output_dir, "{0}_Color_output.png".format(key)))
     ######################## primery root GT ###########################
-    decoded1 = CRF.decode_channel(mask, [3,5])
+    decoded1 = CRF.decode_channel(mask, [channel_bindings['segmentation']['Primary'],channel_bindings['heatmap']['Seed']])
     decoded1 = Image.fromarray(decoded1)
     decoded1 = decoded1.resize((basewidth, hsize), Image.ANTIALIAS)
     decoded1= decoded1.convert('L') 
     decoded1.save(os.path.join(output_dir, "{0}_C1.png".format(key)))
     ######################## Lat root GT ###########################
-    decoded2 = CRF.decode_channel(mask, 1)
+    decoded2 = CRF.decode_channel(mask, channel_bindings['segmentation']['Lateral'])
     decoded2 = Image.fromarray(decoded2)
     decoded2 = decoded2.resize((basewidth, hsize), Image.ANTIALIAS)  
     decoded2= decoded2.convert('L') 

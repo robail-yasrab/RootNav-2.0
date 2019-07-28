@@ -27,7 +27,6 @@ from crf import CRF
 
 
 n_classes = 6
-img_size,img_size1 = 1024, 512
 t0 = time.time()
 fileExtensions = [ "jpg", "JPG", "png", "tif" ]
 
@@ -40,6 +39,11 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
     lateral_spline_params = model_data['spline-config']['lateral']
     heatmap_config = model_data['channel-bindings']['heatmap']
     segmap_config = model_data['channel-bindings']['segmentation']
+
+    net_config = model_data['net-config']
+    net_input_size = net_config['input-size']
+    net_output_size = net_config['output-size']
+    normalisation_scale = net_config['scale']
 
     for extension in fileExtensions:
         files = glob(os.path.join(input_dir, "*." + extension))
@@ -62,12 +66,14 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
             factor1= float(factor1)
             factor2= float(factor2)
             ##########################################################################        
-            resized_img = misc.imresize(img, (img_size1, img_size1), interp='bicubic')
+            resized_img = misc.imresize(img, (net_output_size, net_output_size), interp='bicubic')
 
             orig_size = img.shape[:-1]
 
-            img = misc.imresize(img, (img_size, img_size))
-            img = img.astype(float) / 255.0
+            img = misc.imresize(img, (net_input_size, net_input_size))
+
+            if normalisation_scale != 1:
+                img = img.astype(float) * normalisation_scale
             # NHWC -> NCHW
             img = img.transpose(2, 0, 1)
             img = np.expand_dims(img, 0)
@@ -90,7 +96,7 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
             ################################# CRF ##################################
             # Apply CRF
             mask = CRF.ApplyCRF(model_softmax.squeeze(0).numpy(),resized_img)
-            enlarge(mask, realw, realh, key, output_dir)
+            enlarge(mask, realw, realh, key, model_data['channel-bindings'], output_dir)
             
             # Primary weighted graph
             pri_gt_mask = CRF.decode_channel(mask, [segmap_config['Primary'],heatmap_config['Seed']])
