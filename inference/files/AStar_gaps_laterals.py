@@ -6,9 +6,11 @@ from FibonacciHeap import FibHeap
 from priority_queue import HeapPQ
 import math
 
-def AStar_Lat(start, goal, neighbor_nodes, distance, cost_estimate, weights):
-
+def AStar_Lat(start, goal, neighbor_nodes, distance, cost_estimate, weights, max_path_length):
     width, height = 512, 512 
+
+    weights = weights.reshape((512*512)).tolist()
+
     def idx(pos):
         return pos[1] * width + pos[0]
 
@@ -67,7 +69,7 @@ def AStar_Lat(start, goal, neighbor_nodes, distance, cost_estimate, weights):
                 continue
 
             # Calculate distance to travel to vpos
-            d = weights[vpos[1],vpos[0]]
+            d = weights[vposindex]
 
             new_distance = distances[uposindex] + d * v[1]
 
@@ -90,7 +92,7 @@ def AStar_Lat(start, goal, neighbor_nodes, distance, cost_estimate, weights):
 
         visited[uposindex] = True
 
-    if completed and aa<=200:
+    if completed and aa <= max_path_length:
         from collections import deque
         path = deque()
         current = final_goal_position
@@ -114,71 +116,3 @@ def manhattan(p1, p2):
 def is_blocked_edge(p):
     x, y = p
     return not (x >= 0 and y >= 0 and x < 512 and y < 512)
-'''
-##### for lat.png ###############
-start = [(160,46)]
-#goal = [(218, 41)]
-############ for pri_root.png #############
-
-goal = { (220,20): 1,
-         (219,46): 1,
-         (218,53): 1,
-         (455,43): 2}
-
-
-###########################################
-argv = ['lat.png', 'out.png', 'pri_root.png']
-t0 = time.time()
-img = cv2.imread(argv[0])
-
-##############################  DIS_MAP   ############################################
-bw = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-_, bw = cv2.threshold(bw, 40, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-dist = cv2.distanceTransform(bw, cv2.DIST_L2, 3)
-
-
-def distance_to_weights(d):
-    mx = 2
-    epsilon = 0.01
-    d = np.clip(d, 0, mx)
-    cv2.normalize(d, d, 0, 1.0, cv2.NORM_MINMAX)
-    d = 1 - d
-    d = np.maximum(d, epsilon)
-    return d
-
-weights = distance_to_weights(dist)
-
-dist = weights
-
-cv2.imshow('Distance Transform Image', dist)
-dist = dist*255
-cv2.imwrite('DIS_MAP.png',dist)
-#####################################################################################
-
-path_img = Image.fromarray(np.uint8(img))
-path_pixels = path_img.load()
-
-
-distance = manhattan
-heuristic = manhattan
-for i in start:
-    path, plant_id = AStar(512, 512, i, goal, von_neumann_neighbors, distance, heuristic, weights)
-    if path == []:
-        print ("not found")
-    else:
-        print ("found on plant", plant_id)
-    for position in path:
-        x,y = position
-        path_pixels[x,y] = (255,0,0) # red
-
-path_img.save(argv[1])
-t1 = time.time()
-total = t1-t0
-print ("Time elapsed:", total, "\n")
-
-path_img = np.array(path_img)
-cv2.imshow('DIY convolution', path_img)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
-
-'''

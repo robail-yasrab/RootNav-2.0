@@ -9,4 +9,3 @@ from files.image_proc1 import distance_map, ext_color, ext_white_mask, decode_se
 from files.image_proc1 import decode_segmap1, decode_segmap, decode_segmap2, decode_segmap3, distance_to_weights
 from files.AStar_gaps import AStar_Pri
 from files.AStar_gaps_laterals import AStar_Lat
-from files.AStar_gaps_multiplant import AStar_pri_m
