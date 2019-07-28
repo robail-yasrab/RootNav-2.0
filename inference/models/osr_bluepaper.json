@@ -17,5 +17,11 @@
         "scale": 0.00392156862745098,
         "input-size": 1024,
         "output-size": 512
+    },
+    "pathing-config": {
+        "rtree-threshold": 36,
+        "nms-threshold": 0.7,
+        "max-primary-distance": 400,
+        "max-lateral-distance": 200
     }
 }
