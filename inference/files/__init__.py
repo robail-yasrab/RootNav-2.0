@@ -1,4 +1,3 @@
-from files.hourglass import hg
 from files.utils import convert_state_dict
 from files.func import nonmaximalsuppression, draw_labelmaps, color_heatmap, neighbors
 from files.astar import AStar, AStar2,manhattan, is_blocked, von_neumann_neighbors, von_neumann_neighborsA, squared_euclidean 

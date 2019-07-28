@@ -1,9 +1,9 @@
 {
-    "name": "osr_bluepaper",
+    "name": "arabidopsis_plate",
     "description": "Arabidopsis thaliana grown on plates captured with infra-red",
     "architecture": "hg",
     "multi-plant": true,
-    "weights": "osr_bluepaper.pkl",
+    "weights": "arabidopsis_plate.pkl",
     "spline-config": {
         "primary": { "tension": 0.5, "spacing": 50 },
         "lateral": { "tension": 0.5, "spacing": 20 }

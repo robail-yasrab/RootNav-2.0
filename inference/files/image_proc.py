@@ -4,6 +4,8 @@ import cv2
 import scipy.misc as misc
 from PIL import Image
 import os.path
+from crf import CRF
+
 n_classes = 6
 def enlarge(mask, realw, realh, key, output_dir):
 
@@ -16,17 +18,17 @@ def enlarge(mask, realw, realh, key, output_dir):
     decoded = decoded.resize((basewidth, hsize), Image.ANTIALIAS)
     decoded.save(os.path.join(output_dir, "{0}_Color_output.png".format(key)))
     ######################## primery root GT ###########################
-    decoded1 = decode_segmap3(np.array(mask, dtype=np.uint8))
-    decoded1 = Image.fromarray(np.uint8(decoded1*255))
+    decoded1 = CRF.decode_channel(mask, [3,5])
+    decoded1 = Image.fromarray(decoded1)
     decoded1 = decoded1.resize((basewidth, hsize), Image.ANTIALIAS)
     decoded1= decoded1.convert('L') 
-    decoded1.save(os.path.join(output_dir, "{0}_C2.png".format(key)))
+    decoded1.save(os.path.join(output_dir, "{0}_C1.png".format(key)))
     ######################## Lat root GT ###########################
-    decoded2 = decode_segmap4(np.array(mask, dtype=np.uint8))
-    decoded2 = Image.fromarray(np.uint8(decoded2*255))
+    decoded2 = CRF.decode_channel(mask, 1)
+    decoded2 = Image.fromarray(decoded2)
     decoded2 = decoded2.resize((basewidth, hsize), Image.ANTIALIAS)  
     decoded2= decoded2.convert('L') 
-    decoded2.save(os.path.join(output_dir, "{0}_C1.png".format(key))) 
+    decoded2.save(os.path.join(output_dir, "{0}_C2.png".format(key))) 
 
 
 '''def distance_map(decoded):
@@ -43,16 +45,9 @@ def enlarge(mask, realw, realh, key, output_dir):
     img1[:, :, 2] = distances 
     return img1 '''
 
-def distance_map(decoded):
-    decoded= decoded.astype('float32')
-    bw = cv2.cvtColor(decoded, cv2.COLOR_BGR2GRAY)
-    bw = bw.astype(np.uint8)
-    _, bw = cv2.threshold(bw, 40, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-
-    d = cv2.distanceTransform(bw, cv2.DIST_L2, 3)
-    #d = np.array([0,1,2,3,4,5,6,7,8,9,10])
-    # WHere bw = background
-       # Set d from 0.01 to 0.05
+def distance_map(mask):
+    d = cv2.distanceTransform(mask, cv2.DIST_L2, 3)
+ 
     mx = 3
     gamma = 0.5
     epsilon = 0.01
@@ -62,20 +57,13 @@ def distance_map(decoded):
     d = (d - 1) / (mx - 1)
     d = (1 - d) * (gamma - epsilon) + epsilon
 
-    d[(bw == 0)] = background_penalty
+    d[(mask == 0)] = background_penalty
 
     return d
     
-def distance_to_weights(decoded):
-    decoded= decoded.astype('float32')
-    bw = cv2.cvtColor(decoded, cv2.COLOR_BGR2GRAY)
-    bw = bw.astype(np.uint8)
-    _, bw = cv2.threshold(bw, 40, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+def distance_to_weights(mask):
+    d = cv2.distanceTransform(mask, cv2.DIST_L2, 3)
 
-    d = cv2.distanceTransform(bw, cv2.DIST_L2, 3)
-    #d = np.array([0,1,2,3,4,5,6,7,8,9,10])
-    # WHere bw = background
-       # Set d from 0.01 to 0.05
     mx = 2
     gamma = 0.5
     epsilon = 0.01
@@ -85,7 +73,7 @@ def distance_to_weights(decoded):
     d = (d - 1) / (mx - 1)
     d = (1 - d) * (gamma - epsilon) + epsilon
 
-    d[(bw == 0)] = background_penalty
+    d[(mask == 0)] = background_penalty
 
     return d
 

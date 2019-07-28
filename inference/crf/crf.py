@@ -18,3 +18,14 @@ class CRF():
         q = d.inference(50)
         mask = np.argmax(q, axis=0).reshape(w, h).transpose(1, 0)
         return mask
+
+    @staticmethod
+    def decode_channel(mask, index):
+        channel_out = np.zeros(mask.shape, dtype=np.uint8)
+        if isinstance(index, list):
+            for i in index:
+                channel_out[mask == i] = 255
+        else:
+            channel_out[mask == index] = 255
+
+        return channel_out
