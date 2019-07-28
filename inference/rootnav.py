@@ -118,20 +118,23 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
             # Filter seed and primary tip locations
             seed_locations = rrtree(heatmap_points['Seed'], 36)
             primary_tips = rrtree(heatmap_points['Primary'], 36)
-            start = seed_locations[0]  
-            
+
+            primary_goal_dict = {pt:ix for ix,pt in enumerate(seed_locations)}
             lateral_goal_dict = {}
 
             # Create Plant structure
-            plant = Plant(1, 'wheat', seed=start)
+            plants = [Plant(ix, 'wheat', seed=pt) for ix,pt in enumerate(seed_locations)]
+            primary_root_index = []
 
             # Search across primary roots
             for tip in primary_tips:
-                path = AStar_Pri(start, tip, von_neumann_neighbors, manhattan, manhattan, primary_weights)
+                path,plant_id = AStar_Pri(tip, primary_goal_dict, von_neumann_neighbors, manhattan, manhattan, primary_weights, 200)
                 if path !=[]:
-                    scaled_primary_path = [(x*factor2,y*factor1) for (x,y) in path]
-                    plant.roots.append(Root(scaled_primary_path, spline_tension = primary_spline_params['tension'], spline_knot_spacing = primary_spline_params['spacing']))
-                    current_pid = len(plant.roots) - 1
+                    scaled_primary_path = [(x*factor2,y*factor1) for (x,y) in reversed(path)]
+                    primary_root = Root(scaled_primary_path, spline_tension = primary_spline_params['tension'], spline_knot_spacing = primary_spline_params['spacing'])
+                    plants[plant_id].roots.append(primary_root)
+                    primary_root_index.append(primary_root)
+                    current_pid = len(primary_root_index) - 1
                     for pt in path:
                         lateral_goal_dict[pt] = current_pid        
 
@@ -140,14 +143,17 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
 
             # Search across lateral roots
             for idxx, i in enumerate(lateral_tips):
-                path, pid = AStar_Lat(i, lateral_goal_dict, von_neumann_neighbors, manhattan, manhattan, lateral_weights)
+                path, pid = AStar_Lat(i, lateral_goal_dict, von_neumann_neighbors, manhattan, manhattan, lateral_weights, 200)
                 if path !=[]:
                     scaled_lateral_path = [(x*factor2,y*factor1) for (x,y) in reversed(path)]
                     lateral_root = Root(scaled_lateral_path, spline_tension = lateral_spline_params['tension'], spline_knot_spacing = lateral_spline_params['spacing'])
-                    plant.roots[pid].roots.append(lateral_root)
+                    primary_root_index[pid].roots.append(lateral_root)
+
+            # Filter plants with no roots (E.g. incorrect seed location)
+            plants = [plant for plant in plants if plant.roots is not None and len(plant.roots) > 0]
 
             # Output to RSML
-            RSMLWriter.save(key, output_dir, [plant])
+            RSMLWriter.save(key, output_dir, plants)
 
             ############################# Total time per Image ######################
             print("Dense CRF Post Processed Mask and RSML File is Saved at: Blue_paper/Results/")

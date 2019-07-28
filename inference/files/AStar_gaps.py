@@ -6,9 +6,14 @@ from FibonacciHeap import FibHeap
 from priority_queue import HeapPQ
 import math
 
-def AStar_Pri(start, goal, neighbor_nodes, distance, cost_estimate, weights):
+def AStar_Pri(start, goal, neighbor_nodes, distance, cost_estimate, weights, max_path_length):
     width, height = 512, 512 
     astar_weight = 0.4
+
+    multi_plant = len(goal) > 1
+    goal_pos = goal.keys()[0]
+    
+    weights = weights.reshape((512*512)).tolist()
 
     def idx(pos):
         return pos[1] * width + pos[0]
@@ -20,9 +25,9 @@ def AStar_Pri(start, goal, neighbor_nodes, distance, cost_estimate, weights):
     visited = [False] * total_size
     prev = [None] * total_size
 
-    unvisited = HeapPQ();
+    unvisited = HeapPQ()
 
-    node_index = [None] * total_size;
+    node_index = [None] * total_size
 
     distances[idx(start)] = 0
 
@@ -31,8 +36,10 @@ def AStar_Pri(start, goal, neighbor_nodes, distance, cost_estimate, weights):
     unvisited.insert(start_node)
 
     count = 0
-    aa= 0 ## to make sure not get too long roots
+    aa = 0
     completed = False
+    plant_id = -1
+    final_goal_position = None
 
     while len(unvisited) > 0:
         n = unvisited.removeminimum()
@@ -43,8 +50,10 @@ def AStar_Pri(start, goal, neighbor_nodes, distance, cost_estimate, weights):
         if distances[uposindex] == infinity:
             break
 
-        if upos == goal:
+        if upos in goal:
             completed = True
+            plant_id = goal[upos]
+            final_goal_position = upos
             break
 
         for v in neighbor_nodes(upos):
@@ -58,42 +67,48 @@ def AStar_Pri(start, goal, neighbor_nodes, distance, cost_estimate, weights):
                 continue
 
             # Calculate distance to travel to vpos
-            d = weights[vpos[1],vpos[0]]
+            d = weights[vposindex]
 
-            new_distance = distances[uposindex] + d * v[1]
-
-            remaining = astar_weight * distance(vpos, goal)
+            new_distance = distances[uposindex] + d * v[1]     
 
             if new_distance < distances[vposindex]:
-                aa= distances[vposindex]
+                aa = distances[vposindex]
                 vnode = node_index[vposindex]
 
                 if vnode is None:
-                    vnode = FibHeap.Node(new_distance + remaining, vpos)
+                    if multi_plant:
+                        vnode = FibHeap.Node(new_distance, vpos)
+                    else:
+                        remaining = astar_weight * cost_estimate(vpos, goal_pos)
+                        vnode = FibHeap.Node(new_distance + remaining, vpos)
                     unvisited.insert(vnode)
                     node_index[vposindex] = vnode
                     distances[vposindex] = new_distance
                     prev[vposindex] = upos
-                    aa= distances[vposindex]
+                    aa = distances[vposindex]
                 else:
-                    unvisited.decreasekey(vnode, new_distance + remaining)
+                    if multi_plant:
+                        unvisited.decreasekey(vnode, new_distance)
+                    else:
+                        remaining = astar_weight * cost_estimate(vpos, goal_pos)
+                        unvisited.decreasekey(vnode, new_distance + remaining)
                     distances[vposindex] = new_distance
                     prev[vposindex] = upos
-                    aa= distances[vposindex]
+                    aa = distances[vposindex]
 
         visited[uposindex] = True
 
-    if completed and aa<=400:
+    if completed and aa <= max_path_length:
         from collections import deque
         path = deque()
-        current = goal
+        current = final_goal_position
         while current is not None:
             path.appendleft(current)
             current = prev[idx(current)]
 
-        return path
+        return path, plant_id
     else:
-        return []
+        return [], []
 
 rt2 = math.sqrt(2)
 
@@ -107,57 +122,3 @@ def manhattan(p1, p2):
 def is_blocked_edge(p):
     x, y = p
     return not (x >= 0 and y >= 0 and x < 512 and y < 512)
-
-
-
-
-
-##############################  DIS_MAP   ############################################
-'''bw = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-_, bw = cv2.threshold(bw, 40, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-dist = cv2.distanceTransform(bw, cv2.DIST_L2, 3)
-
-
-def distance_to_weights(d):
-    mx = 3
-    epsilon = 0.01
-    d = np.clip(d, 0, mx)
-    cv2.normalize(d, d, 0, 1.0, cv2.NORM_MINMAX)
-    d = 1 - d
-    d = np.maximum(d, epsilon)
-    return d
-
-weights = distance_to_weights(dist)
-
-dist = weights
-
-cv2.imshow('Distance Transform Image', dist)
-dist = dist*255
-cv2.imwrite('DIS_MAP.png',dist)'''
-#####################################################################################
-
-#path_img = Image.fromarray(np.uint8(img))
-#path_pixels = path_img.load()
-
-'''
-distance = manhattan
-heuristic = manhattan
-for i in start:
-    path = AStar(512, 512, i, goal, von_neumann_neighbors, distance, heuristic, weights)
-    if path == []:
-        print ("not found")
-    else:
-        print ("found on plant")
-    for position in path:
-        x,y = position
-        path_pixels[x,y] = (255,0,0) # red
-
-path_img.save(argv[1])
-t1 = time.time()
-total = t1-t0
-print ("Time elapsed:", total, "\n")
-
-path_img = np.array(path_img)
-cv2.imshow('DIY convolution', path_img)
-cv2.waitKey(0)
-cv2.destroyAllWindows()'''
