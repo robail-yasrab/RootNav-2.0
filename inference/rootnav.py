@@ -12,7 +12,6 @@ import xml.etree.cElementTree as ET
 from PIL import Image
 from torch.autograd import Variable
 from torch.utils import data
-from files.hourglass import hg
 from files.utils import convert_state_dict
 from files.func import *
 from files.astar import *
@@ -39,6 +38,8 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
     multi_plant = model_data['multi-plant']
     primary_spline_params = model_data['spline-config']['primary']
     lateral_spline_params = model_data['spline-config']['lateral']
+    heatmap_config = model_data['channel-bindings']['heatmap']
+    segmap_config = model_data['channel-bindings']['segmentation']
 
     for extension in fileExtensions:
         files = glob(os.path.join(input_dir, "*." + extension))
@@ -90,18 +91,16 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
             # Apply CRF
             mask = CRF.ApplyCRF(model_softmax.squeeze(0).numpy(),resized_img)
             enlarge(mask, realw, realh, key, output_dir)
-
+            
             # Primary weighted graph
-            pri_gt_mask = decode_segmap4(np.array(mask, dtype=np.uint8))
+            pri_gt_mask = CRF.decode_channel(mask, [segmap_config['Primary'],heatmap_config['Seed']])
             primary_weights = distance_map(pri_gt_mask)
 
             # Lateral weighted graph
-            lat_gt_mask = decode_segmap3(np.array(mask, dtype=np.uint8))           
+            lat_gt_mask = CRF.decode_channel(mask, segmap_config['Lateral'])         
             lateral_weights = distance_to_weights(lat_gt_mask)
                      
             ########################## PROCESS HEATMAPS ############################
-            channel_config = model_data['channel-bindings']
-            heatmap_config = model_data['channel-bindings']['heatmap']
             heatmap_index = ['Seed', 'Primary', 'Lateral']
             heatmap_output = model_output.index_select(1,torch.LongTensor([heatmap_config[i] for i in heatmap_index]))
             
