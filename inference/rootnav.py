@@ -45,6 +45,8 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
     net_output_size = net_config['output-size']
     normalisation_scale = net_config['scale']
 
+    pathing_config = model_data['pathing-config']
+
     for extension in fileExtensions:
         files = glob(os.path.join(input_dir, "*." + extension))
         
@@ -116,8 +118,8 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
 
             ############################# PATH FINDING #############################
             # Filter seed and primary tip locations
-            seed_locations = rrtree(heatmap_points['Seed'], 36)
-            primary_tips = rrtree(heatmap_points['Primary'], 36)
+            seed_locations = rrtree(heatmap_points['Seed'], pathing_config['rtree-threshold'])
+            primary_tips = rrtree(heatmap_points['Primary'], pathing_config['rtree-threshold'])
 
             primary_goal_dict = {pt:ix for ix,pt in enumerate(seed_locations)}
             lateral_goal_dict = {}
@@ -128,7 +130,7 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
 
             # Search across primary roots
             for tip in primary_tips:
-                path,plant_id = AStar_Pri(tip, primary_goal_dict, von_neumann_neighbors, manhattan, manhattan, primary_weights, 200)
+                path,plant_id = AStar_Pri(tip, primary_goal_dict, von_neumann_neighbors, manhattan, manhattan, primary_weights, pathing_config['max-primary-distance'])
                 if path !=[]:
                     scaled_primary_path = [(x*factor2,y*factor1) for (x,y) in reversed(path)]
                     primary_root = Root(scaled_primary_path, spline_tension = primary_spline_params['tension'], spline_knot_spacing = primary_spline_params['spacing'])
@@ -139,11 +141,11 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
                         lateral_goal_dict[pt] = current_pid        
 
             # Filter candidate lateral root tips
-            lateral_tips = rrtree(heatmap_points['Lateral'], 36)
+            lateral_tips = rrtree(heatmap_points['Lateral'], pathing_config['rtree-threshold'])
 
             # Search across lateral roots
             for idxx, i in enumerate(lateral_tips):
-                path, pid = AStar_Lat(i, lateral_goal_dict, von_neumann_neighbors, manhattan, manhattan, lateral_weights, 200)
+                path, pid = AStar_Lat(i, lateral_goal_dict, von_neumann_neighbors, manhattan, manhattan, lateral_weights, pathing_config['max-primary-distance'])
                 if path !=[]:
                     scaled_lateral_path = [(x*factor2,y*factor1) for (x,y) in reversed(path)]
                     lateral_root = Root(scaled_lateral_path, spline_tension = lateral_spline_params['tension'], spline_knot_spacing = lateral_spline_params['spacing'])
