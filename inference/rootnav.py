@@ -35,12 +35,13 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
     # Load parameters
     model = model_data['model']
     multi_plant = model_data['multi-plant']
-    primary_spline_params = model_data['spline-config']['primary']
-    lateral_spline_params = model_data['spline-config']['lateral']
-    heatmap_config = model_data['channel-bindings']['heatmap']
-    segmap_config = model_data['channel-bindings']['segmentation']
-
+    primary_spline_params = model_data['pathing-config']['spline-config']['primary']
+    lateral_spline_params = model_data['pathing-config']['spline-config']['lateral']
+  
     net_config = model_data['net-config']
+    heatmap_config = net_config['channel-bindings']['heatmap']
+    segmap_config = net_config['channel-bindings']['segmentation']
+
     net_input_size = net_config['input-size']
     net_output_size = net_config['output-size']
     normalisation_scale = net_config['scale']
@@ -98,7 +99,7 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
             ################################# CRF ##################################
             # Apply CRF
             mask = CRF.ApplyCRF(model_softmax.squeeze(0).numpy(),resized_img)
-            enlarge(mask, realw, realh, key, model_data['channel-bindings'], output_dir)
+            enlarge(mask, realw, realh, key, net_config['channel-bindings'], output_dir)
             
             # Primary weighted graph
             pri_gt_mask = CRF.decode_channel(mask, [segmap_config['Primary'],heatmap_config['Seed']])

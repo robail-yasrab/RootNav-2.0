@@ -4,24 +4,24 @@
     "architecture": "hg",
     "multi-plant": false,
     "weights": "wheat_bluepaper.pkl",
-    "spline-config": {
-        "primary": { "tension": 0.5, "spacing": 100 },
-        "lateral": { "tension": 0.5, "spacing": 40 }
-    },
     "url":"https://cvl.cs.nott.ac.uk/resources/trainedmodels/wheat_bluepaper-590050d3.pkl",
-    "channel-bindings": {
-        "segmentation": { "Background": 0, "Primary": 3, "Lateral": 1 },
-        "heatmap": { "Seed": 5, "Primary": 4, "Lateral": 2 }
-    },
     "net-config": {
         "scale": 0.00392156862745098,
         "input-size": 1024,
-        "output-size": 512
+        "output-size": 512,
+        "channel-bindings": {
+            "segmentation": { "Background": 0, "Primary": 3, "Lateral": 1 },
+            "heatmap": { "Seed": 5, "Primary": 4, "Lateral": 2 }
+        }
     },
     "pathing-config": {
         "rtree-threshold": 36,
         "nms-threshold": 0.7,
         "max-primary-distance": 400,
-        "max-lateral-distance": 200
+        "max-lateral-distance": 200,
+        "spline-config": {
+            "primary": { "tension": 0.5, "spacing": 100 },
+            "lateral": { "tension": 0.5, "spacing": 40 }
+        }
     }
 }
