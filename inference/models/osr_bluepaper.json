@@ -3,8 +3,8 @@
     "description": "Rapeseed grown on blue paper",
     "architecture": "hg",
     "multi-plant": false,
-    "weights": "osr_bluepaper.pkl",
-    "url":"https://cvl.cs.nott.ac.uk/resources/trainedmodels/osr_bluepaper-c4788d86.pkl",
+    "weights": "osr_bluepaper.pth",
+    "url":"https://cvl.cs.nott.ac.uk/resources/trainedmodels/osr_bluepaper-083ed788.pth",
     "net-config": {
         "scale": 0.00392156862745098,
         "input-size": 1024,
