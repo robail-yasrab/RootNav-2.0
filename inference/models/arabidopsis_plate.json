@@ -3,8 +3,8 @@
     "description": "Arabidopsis thaliana grown on plates captured with infra-red",
     "architecture": "hg",
     "multi-plant": true,
-    "weights": "arabidopsis_plate.pkl",
-    "url":"https://cvl.cs.nott.ac.uk/resources/trainedmodels/arabidopsis_plate-8d8307d.pkl",
+    "weights": "arabidopsis_plate.pth",
+    "url":"https://cvl.cs.nott.ac.uk/resources/trainedmodels/arabidopsis_plate-ea874d94.pth",
     "net-config": {
         "scale": 1,
         "input-size": 1024,

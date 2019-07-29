@@ -2,8 +2,8 @@ import time
 import cv2
 from PIL import Image
 import numpy as np
-from FibonacciHeap import FibHeap
-from priority_queue import HeapPQ
+from .FibonacciHeap import FibHeap
+from .priority_queue import HeapPQ
 import math
 
 def AStar_Pri(start, goal, neighbor_nodes, distance, cost_estimate, weights, max_path_length):
@@ -11,7 +11,7 @@ def AStar_Pri(start, goal, neighbor_nodes, distance, cost_estimate, weights, max
     astar_weight = 0.4
 
     multi_plant = len(goal) > 1
-    goal_pos = goal.keys()[0]
+    goal_pos = list(goal)[0]
     
     weights = weights.reshape((512*512)).tolist()
 

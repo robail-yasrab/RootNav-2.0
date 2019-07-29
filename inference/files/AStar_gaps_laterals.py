@@ -2,8 +2,8 @@ import time
 import cv2
 from PIL import Image
 import numpy as np
-from FibonacciHeap import FibHeap
-from priority_queue import HeapPQ
+from .FibonacciHeap import FibHeap
+from .priority_queue import HeapPQ
 import math
 
 def AStar_Lat(start, goal, neighbor_nodes, distance, cost_estimate, weights, max_path_length):

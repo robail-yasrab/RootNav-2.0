@@ -2,7 +2,7 @@
 from abc import ABCMeta, abstractmethod
 import itertools
 
-from FibonacciHeap import FibHeap
+from .FibonacciHeap import FibHeap
 import heapq
 
 class PriorityQueue():

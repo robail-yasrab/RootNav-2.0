@@ -27,7 +27,6 @@ from crf import CRF
 
 
 n_classes = 6
-t0 = time.time()
 fileExtensions = [ "jpg", "JPG", "png", "tif" ]
 
 def run_rootnav(model_data, use_cuda, input_dir, output_dir):
@@ -52,10 +51,11 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
         files = glob(os.path.join(input_dir, "*." + extension))
         
         for file in files:
+            t0 = time.time()
             name = os.path.basename(file) 
             key = os.path.splitext(name)[0]
 
-            print 'Now Reading',name
+            print ('Now Reading {0}'.format(name))
             sys.stdout.flush()
             img = misc.imread(file)
 
@@ -159,10 +159,10 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
             RSMLWriter.save(key, output_dir, plants)
 
             ############################# Total time per Image ######################
-            print("Dense CRF Post Processed Mask and RSML File is Saved at: Blue_paper/Results/")
+            print("RSML and mask output saved in: {0}".format(output_dir))
             t1 = time.time()
             total = t1-t0
-            print ("RSML Time elapsed:", total, "\n")
+            print ("Time elapsed: {0:.2f}s\n".format(total))
 
 def list_models():
     print ("Model     \t\tDescription")

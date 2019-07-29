@@ -3,8 +3,8 @@
     "description": "Wheat grown on blue paper",
     "architecture": "hg",
     "multi-plant": false,
-    "weights": "wheat_bluepaper.pkl",
-    "url":"https://cvl.cs.nott.ac.uk/resources/trainedmodels/wheat_bluepaper-590050d3.pkl",
+    "weights": "wheat_bluepaper.pth",
+    "url":"https://cvl.cs.nott.ac.uk/resources/trainedmodels/wheat_bluepaper-6d109612.pth",
     "net-config": {
         "scale": 0.00392156862745098,
         "input-size": 1024,
