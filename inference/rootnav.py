@@ -84,9 +84,9 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
 
             if use_cuda:
                 model.cuda(0)
-                images = Variable(img.cuda(0), requires_grad=True)
+                images = Variable(img.cuda(0), requires_grad=False)
             else:
-                images = Variable(img, requires_grad=True)
+                images = Variable(img, requires_grad=False)
 
             ######################## MODEL FORWARD #################################
             model_output = model(images)[-1].data.cpu()
