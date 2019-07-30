@@ -27,7 +27,7 @@ from crf import CRF
 
 
 n_classes = 6
-fileExtensions = [ "jpg", "JPG", "png", "tif" ]
+fileExtensions = set([ ".jpg", ".JPG", ".jpeg", ".png", ".tif", ".tiff", ".bmp" ])
 
 def run_rootnav(model_data, use_cuda, input_dir, output_dir):
     
@@ -47,10 +47,10 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
 
     pathing_config = model_data['pathing-config']
 
-    for extension in fileExtensions:
-        files = glob(os.path.join(input_dir, "*." + extension))
-        
-        for file in files:
+    files = glob(os.path.join(input_dir, "*.*"))
+    for file in files:
+        extension = os.path.splitext(file)[1]
+        if extension in fileExtensions:
             t0 = time.time()
             name = os.path.basename(file) 
             key = os.path.splitext(name)[0]

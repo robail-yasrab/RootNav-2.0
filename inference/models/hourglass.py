@@ -95,7 +95,6 @@ class Hourglass(nn.Module):
         super(Hourglass, self).__init__()
         self.depth = depth
         self.block = block
-        self.upsample = nn.Upsample(scale_factor=2)
         self.hg = self._make_hour_glass(block, num_blocks, planes, depth)
 
     def _make_residual(self, block, num_blocks, planes):
@@ -125,7 +124,7 @@ class Hourglass(nn.Module):
         else:
             low2 = self.hg[n-1][3](low1)
         low3 = self.hg[n-1][2](low2)
-        up2 = self.upsample(low3)
+        up2 = F.interpolate(low3, scale_factor=2, mode='nearest')
         out = up1 + up2
         return out
 
