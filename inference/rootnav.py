@@ -6,7 +6,6 @@ import argparse
 import numpy as np
 import scipy.misc as misc
 import torch.nn.functional as F
-import pydensecrf.densecrf as dcrf
 import matplotlib.pyplot as plt
 import xml.etree.cElementTree as ET
 from PIL import Image
@@ -29,7 +28,7 @@ from crf import CRF
 n_classes = 6
 fileExtensions = set([ ".jpg", ".JPG", ".jpeg", ".png", ".tif", ".tiff", ".bmp" ])
 
-def run_rootnav(model_data, use_cuda, input_dir, output_dir):
+def run_rootnav(model_data, use_cuda, use_crf, input_dir, output_dir):
     
     # Load parameters
     model = model_data['model']
@@ -98,7 +97,7 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir):
             
             ################################# CRF ##################################
             # Apply CRF
-            mask = CRF.ApplyCRF(model_softmax.squeeze(0).numpy(),resized_img)
+            mask = CRF.ApplyCRF(model_softmax.squeeze(0), resized_img, use_crf)
             enlarge(mask, realw, realh, key, net_config['channel-bindings'], output_dir)
             
             # Primary weighted graph
@@ -177,7 +176,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-l', '--list', action='store_true', default=False, help='List available models and exit')
     parser.add_argument('--model', default="wheat_bluepaper", metavar='M', help="The trained model to use (default wheat_bluepaper)")
-    parser.add_argument('--no_cuda', action='store_true', default=False, help='disables CUDA training')
+    parser.add_argument('--no_cuda', action='store_true', default=False, help='disables CUDA')
+    parser.add_argument('--no_crf', action='store_true', default=False, help='disables CRF post-processing')
     parser.add_argument('input_dir', type=str, help='Input directory', nargs="?")
     parser.add_argument('output_dir', type=str, help='Output directory', nargs="?")
 
@@ -198,6 +198,9 @@ if __name__ == '__main__':
         print ("Cuda is not available, switching to CPU")
     use_cuda = torch.cuda.is_available() and not args.no_cuda
 
+    # Check CRF flag
+    use_crf = not args.no_crf
+
     # Load the model
     try:
         model_data = ModelLoader.get_model(args.model, gpu=use_cuda)
@@ -206,4 +209,4 @@ if __name__ == '__main__':
         exit()
 
     # Process
-    run_rootnav(model_data, use_cuda, args.input_dir, args.output_dir)
+    run_rootnav(model_data, use_cuda, use_crf, args.input_dir, args.output_dir)

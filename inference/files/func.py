@@ -1,5 +1,4 @@
 import operator
-import pydensecrf.densecrf as dcrf
 import os
 import sys
 import yaml
