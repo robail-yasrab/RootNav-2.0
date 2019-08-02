@@ -1,5 +1,9 @@
 # RootNav 2.0
 This is the RootNav 2.0 Code repository. This README and the repository code are being improved daily as we prepare for publication, please check back for new features and documentation soon!
+<p align="center">
+<a href="https://www.youtube.com/watch?v=IJQurx2Az2w" target="_blank">
+<a href="https://www.youtube.com/watch?v=Hab2Xtk7LPs" target="_blank"> 
+</p>
 
 ### 29 July 2019 - New features
 * Python 3.6 support. This should make it much easier to install on Windows, for example. It's also made RootNav 2.0 about 30% faster!
