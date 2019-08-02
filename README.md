@@ -56,6 +56,7 @@ Training code may be found in the training folder. Instructions on training mode
 
 
 ### Dataset Directory Format
+Please follow the bellow given directory formate for the training process. 
 ```
 - Roots
   -- train  (training dataset images)
