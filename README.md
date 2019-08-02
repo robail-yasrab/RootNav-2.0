@@ -56,12 +56,15 @@ Training code may be found in the training folder. Instructions on training mode
 
 
 ### Dataset Directory Format
-*- Roots
-  *-- train  (training dataset images)
-  *-- trainannot (RGB ground truth images)
-  *-- val (validation dataset images)
-  *-- valannot (RGB validation ground truth images)
-  *-- RSML (RSML annotation)
+```
+- Roots
+  -- train  (training dataset images)
+  -- trainannot (RGB ground truth images)
+  -- val (validation dataset images)
+  -- valannot (RGB validation ground truth images)
+  -- RSML (RSML annotation)
+```  
+  
 ### Usage
 **Setup config file**
 ```yaml
