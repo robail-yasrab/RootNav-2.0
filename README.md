@@ -2,8 +2,8 @@
 This is the RootNav 2.0 Code repository. This README and the repository code are being improved daily as we prepare for publication, please check back for new features and documentation soon!
 
 <p align="center">
-<a href="https://www.youtube.com/watch?v=IJQurx2Az2w" target="_blank"><img src="https://i.imgur.com/agvJOPF.gif" width="364"/></a>
-<img src="https://meetshah1995.github.io/images/blog/ss/ptsemseg.png" width="49%"/>
+<a href="https://www.youtube.com/watch?v=IJQurx2Az2w" target="_blank"></a>
+
 </p>
 
 ### 29 July 2019 - New features
