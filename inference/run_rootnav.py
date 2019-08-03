@@ -6,9 +6,8 @@ import argparse
 import numpy as np
 import scipy.misc as misc
 from torch.autograd import Variable
-from files.func import nonmaximalsuppression as nms
-from files.rrtree import rrtree
-from files.image_proc import image_output, distance_map, distance_to_weights
+from utils import nonmaximalsuppression as nms, rrtree
+from utils import image_output, distance_map, distance_to_weights
 from astar import AStar_Pri, AStar_Lat, von_neumann_neighbors, manhattan
 from glob import glob
 from rsml import RSMLWriter, Plant, Root
