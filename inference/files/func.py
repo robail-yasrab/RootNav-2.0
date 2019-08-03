@@ -1,27 +1,11 @@
-import operator
 import os
-import sys
-import yaml
-import time
 import math
 import torch
-import shutil
-import random
-import argparse
-import datetime
 import numpy as np
-from PIL import Image
+from numpy.lib.stride_tricks import as_strided
 import torch.nn as nn
 import torch.nn.functional as F
-import torchvision.models as models
 import scipy.misc as misc
-import numpy as np
-import matplotlib.pyplot as plt
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms, utils
-from torch.utils import data
-from tqdm import tqdm
-import cv2
 
 #######################################################################
 sigma=1
@@ -483,10 +467,8 @@ def show_example(img, gt_mask, pred_mask, nn):
     #cv2.waitKey(5)
 ###############################################################
     
-from numpy.lib.stride_tricks import as_strided
-import cv2
+#import cv2
 
-import numpy as np
 def neighbors(im, i, j, d=1):
     n = im[i-d:i+d+1, j-d:j+d+1].flatten()
     # remove the element (i,j)
@@ -524,5 +506,3 @@ def cell_neighbors(arr, i, j, d):
     j1 = w.shape[3] - max(0, d - j + jx)
 
     return w[ix, jx][i0:i1,j0:j1].ravel()
-
-

@@ -1,8 +1,9 @@
+import os
 import numpy as np
 import cv2
 import scipy.misc as misc
 from PIL import Image
-import os.path
+from os import path
 from crf import CRF
 
 n_classes = 6
@@ -60,111 +61,6 @@ def distance_to_weights(mask):
     d[(mask == 0)] = background_penalty
 
     return d
-
-def ext_color1(decoded_crf, my_list1, my_list2):
-    decoded_crf= decoded_crf* 255.0  
-    img = np.array(decoded_crf, dtype=np.uint8)
-    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-
-    lower_blue = np.array([110,50,50])
-    upper_blue = np.array([130,255,255])
-    maskblue = cv2.inRange(hsv, lower_blue, upper_blue)
-
-    lower_green = np.array([50,50,50])
-    upper_green = np.array([70,255,255])
-    maskgreen = cv2.inRange(hsv, lower_green, upper_green)
-
-    ###########################################################
-    #maskgreen[np.where((maskgreen == [255]))] = [128]     # for pri root
-    for p,q in zip(my_list1, my_list2):
-        p = np.array(p)
-        q = np.array(q)
-        if p!=[] and q!=[]:
-            for x, y in zip(p, q):
-                maskgreen[y,x] = 128
-            
-    #####################################################
-
-    latl =  maskgreen+maskblue
-
-    img2 = np.zeros_like(img)
-    img2[:,:,0] = latl
-    img2[:,:,1] = latl
-    img2[:,:,2] = latl
-    #misc.imsave('lat.png', img2)
-    return img2
-
-
-def ext_color(decoded_crf, my_list1, my_list2):
-    decoded_crf= decoded_crf* 255.0  
-
-    img = np.array(decoded_crf, dtype=np.uint8)
-    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-
-    lower_blue = np.array([110,50,50])
-    upper_blue = np.array([130,255,255])
-    maskblue = cv2.inRange(hsv, lower_blue, upper_blue)
-
-    lower_red = np.array([170,50,50])
-    upper_red = np.array([180,255,255])
-    lower_red1 = np.array([0,50,50])
-    upper_red1 = np.array([10,255,255])
-
-    maskred = cv2.inRange(hsv, lower_red, upper_red)
-    maskred2 = cv2.inRange(hsv, lower_red1, upper_red1)
-
-    lower_green = np.array([50,50,50])
-    upper_green = np.array([70,255,255])
-    maskgreen = cv2.inRange(hsv, lower_green, upper_green)
-
-    ###########################################################
-    maskred = maskred+ maskred2 +maskgreen
-    #maskblue[np.where((maskblue == [255]))] = [255]
-    #maskblue = np.float32(maskblue)
-
-    for p,q in zip(my_list1, my_list2):
-        p = np.array(p)
-        q = np.array(q)
-        for x, y in zip(p, q):
-            #maskblue[int(y),int(x)] = 128
-            x, y = y , x
-            #neighbors = [(x - 1, y), (x, y - 1), (x + 1, y), (x, y + 1)]
-            neighbors = [(x, y)]
-            for p in neighbors:
-                maskblue[p[0], p[1]] = 128
-
-    #maskblue[np.where((maskblue == [255]))] = [128]     # for pri root
-    #####################################################
-
-    latl = maskred + maskblue 
-
-    img2 = np.zeros_like(img)
-    img2[:,:,0] = latl
-    img2[:,:,1] = latl
-    img2[:,:,2] = latl
-    
-    #for p,q in zip(my_list1, my_list2):
-    #    p = np.array(p)
-    #    p = np.array(p)
-    #    for x, y in zip(p, q):
-    #        if img2[x,y].any() == (225, 225, 225):
-    #            img2[x,y] = (128, 128, 128)
-    #misc.imsave('lat.png', img2)
-    return img2
-
-
-def ext_white_mask(decoded_crf):
-
-    img1 = np.array(decoded_crf, dtype=np.uint8)
-    hsv = cv2.cvtColor(img1, cv2.COLOR_BGR2HSV)
-    lower_white = np.array([0, 0, 0], dtype=np.uint8)
-    upper_white = np.array([0, 0, 255], dtype=np.uint8)
-    white_mask = cv2.inRange(hsv, lower_white, upper_white)
-    white = cv2.bitwise_not(img1, img1, mask=white_mask)
-    white = np.transpose(white, (2, 0, 1))
-
-    return white
-
 
 def decode_segmap(temp):
     Sky = [255, 255, 255,0]
