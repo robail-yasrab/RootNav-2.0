@@ -10,14 +10,12 @@ class CRF():
     @staticmethod
     def ApplyCRF(model_softmax, image, use_crf):
         if not use_crf:
-            print ("Elect skip")
             return _simple_argmax(model_softmax)
 
         try:
             import pydensecrf.densecrf as dcrf
         except ImportError:
             # Skip CRF processing if requested but no module available
-            print ("Force skip")
             mask = _simple_argmax(model_softmax)
         else:
             model_softmax = model_softmax.numpy()
