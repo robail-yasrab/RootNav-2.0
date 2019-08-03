@@ -8,7 +8,7 @@ from torch.autograd import Variable
 from files.func import *
 from files.rrtree import rrtree
 from files.image_proc import image_output, distance_map, distance_to_weights
-from files.astar import AStar_Pri, AStar_Lat, von_neumann_neighbors, manhattan
+from astar import AStar_Pri, AStar_Lat, von_neumann_neighbors, manhattan
 from glob import glob
 from rsml import RSMLWriter, Plant, Root
 from models import ModelLoader
