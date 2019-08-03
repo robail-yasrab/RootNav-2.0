@@ -1,11 +1,12 @@
 import time
 import sys, os
 import torch
+from torch.nn.functional import softmax
 import argparse
 import numpy as np
 import scipy.misc as misc
 from torch.autograd import Variable
-from files.func import *
+from files.func import nonmaximalsuppression as nms
 from files.rrtree import rrtree
 from files.image_proc import image_output, distance_map, distance_to_weights
 from astar import AStar_Pri, AStar_Lat, von_neumann_neighbors, manhattan
@@ -13,7 +14,6 @@ from glob import glob
 from rsml import RSMLWriter, Plant, Root
 from models import ModelLoader
 from crf import CRF
-
 
 n_classes = 6
 fileExtensions = set([".JPG", ".JPEG", ".PNG", ".TIF", ".TIFF", ".BMP" ])
@@ -76,7 +76,7 @@ def run_rootnav(model_data, use_cuda, use_crf, input_dir, output_dir, no_segment
 
             ######################## MODEL FORWARD #################################
             model_output = model(images)[-1].data.cpu()
-            model_softmax = F.softmax(model_output, dim=1)
+            model_softmax = softmax(model_output, dim=1)
             
             batch_count = model_output.size(0)
             if batch_count > 1:
@@ -100,7 +100,7 @@ def run_rootnav(model_data, use_cuda, use_crf, input_dir, output_dir, no_segment
             
             heatmap_points = {}
             for idx, binding_key in enumerate(heatmap_index):
-                heatmap_points[binding_key] = nonmaximalsuppression(heatmap_output[0][idx], 0.7)
+                heatmap_points[binding_key] = nms(heatmap_output[0][idx], 0.7)
 
             ############################# PATH FINDING #############################
             # Filter seed and primary tip locations
