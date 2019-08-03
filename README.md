@@ -1,6 +1,7 @@
 # RootNav 2.0
 This is the RootNav 2.0 Code repository. This README and the repository code are being improved daily as we prepare for publication, please check back for new features and documentation soon!
 
+
 ### 29 July 2019 - New features
 * Python 3.6 support. This should make it much easier to install on Windows, for example. It's also made RootNav 2.0 about 30% faster!
 * Simplified environment and requirement files. Some unecessary dependencies have been removed to speed up and simplify installation.
@@ -52,7 +53,79 @@ python rootnav.py --model wheat_bluepaper input_directory output_directory
 RootNav will read any images within specified input directory, and output images and RSML to the output directory.
 
 ### Training
-Training code may be found in the training folder. Instructions on training models will be added here soon. If you would like to collaborate on the development of new models for RootNav 2.0, please contact us.
+Training code may be found in the training folder. Instructions on training models are given below. If you would like to collaborate on the development of new models for RootNav 2.0, please contact us.
+
+
+### Dataset Directory Format
+Please follow the bellow given directory formate for the training process. 
+```
+- Roots
+  -- train  (training dataset images)
+  -- trainannot (RGB ground truth images)
+  -- val (validation dataset images)
+  -- valannot (RGB validation ground truth images)
+  -- RSML (RSML annotation)
+```  
+  
+### Usage
+**Setup config file**
+```yaml
+# Model Configuration
+model:
+    arch: <name> [options: 'Hourglass, Nested_HG:<value>
+
+# Data Configuration
+data:
+    dataset: <name> [options: 'wheat_roots', OSR_roots] 
+    train_split: <split_to_train_on>
+    val_split: <spit_to_validate_on>
+    img_rows: 512
+    img_cols: 1024
+    path: <path/to/dataset>
+
+
+# Training Configuration
+training:
+    n_workers: 64
+    train_iters: 35000
+    batch_size: 16
+    val_interval: 500
+    print_interval: 25
+    loss:
+        name: <loss_type> [options: 'cross_entropy, bootstrapped_cross_entropy, multi_scale_crossentropy']
+        <loss_keyarg1>:<value>
+
+    # Optmizer Configuration
+    optimizer:
+        name: <optimizer_name> [options: 'sgd, adam, adamax, asgd, adadelta, adagrad, rmsprop']
+        lr: 1.0e-3
+        weight_decay: 0.00005
+        momentum: 0
+        
+    # Augmentations Configuration
+    augmentations:
+        rotate: d                                    #[rotate -d to d degrees]
+        hflip: p                                     #[flip horizontally with chance p]
+
+
+    # LR Schedule Configuration
+    lr_schedule:
+        name: <schedule_type> [options: 'constant_lr, poly_lr, multi_step, cosine_annealing, exp_lr']
+        <scheduler_keyarg1>:<value>
+
+    # Transfer Leaning ... path to pre-trained model  
+    # Resume from checkpoint  
+    resume: <path_to_checkpoint>
+```
+**Model Training:**
+
+```
+python train.py [-h] [--config [CONFIG]] 
+
+--config                Configuration file to use
+
+# example: python train.py --config ./configs/rootnav2_Nested_HG.yml 
+```
 
 ## Contact
 Publication details will appear here in due course. For enquiries please contact [michael.pound@nottingham.ac.uk](mailto:michael.pound@nottingham.ac.uk).
