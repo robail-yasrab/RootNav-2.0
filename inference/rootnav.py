@@ -1,34 +1,26 @@
-import cv2
 import time
 import sys, os
 import torch
 import argparse
 import numpy as np
 import scipy.misc as misc
-import torch.nn.functional as F
-import matplotlib.pyplot as plt
-import xml.etree.cElementTree as ET
-from PIL import Image
 from torch.autograd import Variable
-from torch.utils import data
-from files.utils import convert_state_dict
 from files.func import *
 from files.astar import *
 from files.rrtree import rrtree
-from files.rsml import prettify
 from files.image_proc import *
 from files.AStar_gaps import *
 from files.AStar_gaps_laterals import *
 from glob import glob
-from rsml import Spline, Plant, Root, RSMLWriter
+from rsml import RSMLWriter, Plant, Root
 from models import ModelLoader
 from crf import CRF
 
 
 n_classes = 6
-fileExtensions = set([ ".jpg", ".JPG", ".jpeg", ".png", ".tif", ".tiff", ".bmp" ])
+fileExtensions = set([".JPG", ".JPEG", ".PNG", ".TIF", ".TIFF", ".BMP" ])
 
-def run_rootnav(model_data, use_cuda, use_crf, input_dir, output_dir):
+def run_rootnav(model_data, use_cuda, use_crf, input_dir, output_dir, no_segmentation_images):
     
     # Load parameters
     model = model_data['model']
@@ -48,7 +40,7 @@ def run_rootnav(model_data, use_cuda, use_crf, input_dir, output_dir):
 
     files = glob(os.path.join(input_dir, "*.*"))
     for file in files:
-        extension = os.path.splitext(file)[1]
+        extension = os.path.splitext(file)[1].upper()
         if extension in fileExtensions:
             t0 = time.time()
             name = os.path.basename(file) 
@@ -59,21 +51,18 @@ def run_rootnav(model_data, use_cuda, use_crf, input_dir, output_dir):
             img = misc.imread(file)
 
             ####################### RESIZE #########################################
-            realh, realw= img.shape[:2]
-            realw= float(realw)
-            realh= float(realh)
-            ########################################################################
-            factor1 =realh/512
-            factor2 = (realw)/512
-            factor1= float(factor1)
-            factor2= float(factor2)
-            ##########################################################################        
-            resized_img = misc.imresize(img, (net_output_size, net_output_size), interp='bicubic')
+            realh, realw = img.shape[:2]
+            realw = float(realw)
+            realh = float(realh)
+            factor1 = realh / 512.0
+            factor2 = realw / 512.0
 
+            resized_img = misc.imresize(img, (net_output_size, net_output_size), interp='bicubic')
             orig_size = img.shape[:-1]
 
             img = misc.imresize(img, (net_input_size, net_input_size))
 
+            ########################### IMAGE PREP #################################
             if normalisation_scale != 1:
                 img = img.astype(float) * normalisation_scale
             # NHWC -> NCHW
@@ -98,7 +87,7 @@ def run_rootnav(model_data, use_cuda, use_crf, input_dir, output_dir):
             ################################# CRF ##################################
             # Apply CRF
             mask = CRF.ApplyCRF(model_softmax.squeeze(0), resized_img, use_crf)
-            enlarge(mask, realw, realh, key, net_config['channel-bindings'], output_dir)
+            enlarge(mask, realw, realh, key, net_config['channel-bindings'], output_dir, no_segmentation_images)
             
             # Primary weighted graph
             pri_gt_mask = CRF.decode_channel(mask, [segmap_config['Primary'],heatmap_config['Seed']])
@@ -180,6 +169,7 @@ if __name__ == '__main__':
     parser.add_argument('--no_crf', action='store_true', default=False, help='disables CRF post-processing')
     parser.add_argument('input_dir', type=str, help='Input directory', nargs="?")
     parser.add_argument('output_dir', type=str, help='Output directory', nargs="?")
+    parser.add_argument('--no_segmentation_images', action='store_true', default=False, help='Reduce output files to minimum')
 
     args = parser.parse_args()
 
@@ -209,4 +199,4 @@ if __name__ == '__main__':
         exit()
 
     # Process
-    run_rootnav(model_data, use_cuda, use_crf, args.input_dir, args.output_dir)
+    run_rootnav(model_data, use_cuda, use_crf, args.input_dir, args.output_dir, args.no_segmentation_images)

@@ -15,7 +15,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
 import scipy.misc as misc
-#from skimage import io, transform
 import numpy as np
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
@@ -23,8 +22,6 @@ from torchvision import transforms, utils
 from torch.utils import data
 from tqdm import tqdm
 import cv2
-
-#weights = [0.5794, 3.6466, 0.0041, 25.7299]
 
 #######################################################################
 sigma=1
@@ -196,15 +193,6 @@ def draw_labelmaps(img, pts, sigma, type='Gaussian'):
 def gauss(x, a, b, c, d=0):
     return a * np.exp(-(x - b)**2 / (2 * c**2)) + d
 
-
-def imshow1(img, Name):
-    #npimg = im_to_numpy(img*255).astype(np.uint8)
-    #print npimg.shape 
-    plt.imshow(img)
-    plt.axis('off')
-    plt.savefig(os.path.join('/home/pszry/usr/local/SegNet/Dataset/Heatmap/out/', Name+'.png'), bbox_inches='tight', pad_inches=0)
-
-
 def show_joints(img, pts):
     imshow(img)
     
@@ -274,13 +262,6 @@ def batch_with_heatmap(inputs, outputs, mean=torch.Tensor([0.5, 0.5, 0.5]), num_
     return np.concatenate(batch_img)
 
 ######################################################################
-def imshow1(img, Name):
-    #npimg = im_to_numpy(img*255).astype(np.uint8)
-    #print npimg.shape 
-    plt.imshow(img)
-    plt.axis('off')
-    plt.savefig(os.path.join('/home/pszry/usr/local/SegNet/Dataset/12-11-2018/pytorch-semseg/', Name+'.png'), bbox_inches='tight', pad_inches=0)
-
 def gauss(x, a, b, c, d=0):
     return a * np.exp(-(x - b)**2 / (2 * c**2)) + d
 
