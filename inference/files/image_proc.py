@@ -1,5 +1,4 @@
 import numpy as np
-#import mahotas
 import cv2
 import scipy.misc as misc
 from PIL import Image
@@ -7,42 +6,28 @@ import os.path
 from crf import CRF
 
 n_classes = 6
-def enlarge(mask, realw, realh, key, channel_bindings, output_dir):
+def enlarge(mask, realw, realh, key, channel_bindings, output_dir, no_segmentation_images):
     ######################## COLOR GT #################################
     decoded = decode_segmap(np.array(mask, dtype=np.uint8))
-    decoded = Image.fromarray(np.uint8(decoded*255))
+    decoded = Image.fromarray(np.uint8(decoded*255), 'RGBA')
     basewidth = int(realw)
-    wpercent = (basewidth / float(decoded.size[0]))
     hsize = int(realh)
     decoded = decoded.resize((basewidth, hsize), Image.ANTIALIAS)
     decoded.save(os.path.join(output_dir, "{0}_Color_output.png".format(key)))
-    ######################## primery root GT ###########################
-    decoded1 = CRF.decode_channel(mask, [channel_bindings['segmentation']['Primary'],channel_bindings['heatmap']['Seed']])
-    decoded1 = Image.fromarray(decoded1)
-    decoded1 = decoded1.resize((basewidth, hsize), Image.ANTIALIAS)
-    decoded1= decoded1.convert('L') 
-    decoded1.save(os.path.join(output_dir, "{0}_C1.png".format(key)))
-    ######################## Lat root GT ###########################
-    decoded2 = CRF.decode_channel(mask, channel_bindings['segmentation']['Lateral'])
-    decoded2 = Image.fromarray(decoded2)
-    decoded2 = decoded2.resize((basewidth, hsize), Image.ANTIALIAS)  
-    decoded2= decoded2.convert('L') 
-    decoded2.save(os.path.join(output_dir, "{0}_C2.png".format(key))) 
 
-
-'''def distance_map(decoded):
-
-
-    decoded = decoded.astype('uint8')
-
-    nuclear = decoded[:,:,0]
-
-    distances = cv2.distanceTransform(nuclear, cv2.DIST_L2, 5)
-    img1 = np.zeros((512,512,3), dtype=np.float32)
-    img1[:, :, 0] = distances
-    img1[:, :, 1] = distances
-    img1[:, :, 2] = distances 
-    return img1 '''
+    if not no_segmentation_images:
+        ######################## Primary root GT ###########################
+        decoded1 = CRF.decode_channel(mask, [channel_bindings['segmentation']['Primary'],channel_bindings['heatmap']['Seed']])
+        decoded1 = Image.fromarray(decoded1)
+        decoded1 = decoded1.resize((basewidth, hsize), Image.NEAREST)
+        decoded1= decoded1.convert('L')
+        decoded1.save(os.path.join(output_dir, "{0}_C1.png".format(key)))
+        ######################## Lat root GT ###########################
+        decoded2 = CRF.decode_channel(mask, channel_bindings['segmentation']['Lateral'])
+        decoded2 = Image.fromarray(decoded2)
+        decoded2 = decoded2.resize((basewidth, hsize), Image.NEAREST)
+        decoded2= decoded2.convert('L')
+        decoded2.save(os.path.join(output_dir, "{0}_C2.png".format(key)))
 
 def distance_map(mask):
     d = cv2.distanceTransform(mask, cv2.DIST_L2, 3)
@@ -182,13 +167,12 @@ def ext_white_mask(decoded_crf):
 
 
 def decode_segmap(temp):
-    Sky = [255, 255, 255]
-    Building = [0, 114, 178]
-    Pole = [204, 121, 115]
-    seed = [213, 94, 0]
-    tipp = [0, 158, 115]
-    tipsec = [0, 0, 0] #make it 0,0,0
-
+    Sky = [255, 255, 255,0]
+    Building = [0, 114, 178,255]
+    Pole = [204, 121, 115,255]
+    seed = [213, 94, 0,255]
+    tipp = [0, 158, 115,255]
+    tipsec = [0, 0, 0, 255] #make it 0,0,0
 
     label_colours = np.array(
         [
@@ -197,161 +181,24 @@ def decode_segmap(temp):
             Pole,
             seed,
             tipp,
-            tipsec,
-
-
+            tipsec
         ]
     )
+
     r = temp.copy()
     g = temp.copy()
     b = temp.copy()
+    a = temp.copy()
+
     for l in range(0, n_classes):
         r[temp == l] = label_colours[l, 0]
         g[temp == l] = label_colours[l, 1]
         b[temp == l] = label_colours[l, 2]
+        a[temp == l] = label_colours[l, 3]
 
-    rgb = np.zeros((temp.shape[0], temp.shape[1], 3))
-    rgb[:, :, 0] = r / 255.0
-    rgb[:, :, 1] = g / 255.0
-    rgb[:, :, 2] = b / 255.0
-    return rgb
-def decode_segmap1(temp):
-    back = [0, 0, 0]
-    seed = [255, 255, 255]
-    priroot = [255, 255, 255]
-    seed = [255, 255, 255]
-    tipp = [255, 255, 255]
-    tipsec = [255, 255, 255] #make it 0,0,0
-
-
-    label_colours = np.array(
-        [
-            back,
-            seed,
-            priroot,
-            seed,
-            tipp,
-            tipsec,
-
-
-        ]
-    )
-    r = temp.copy()
-    g = temp.copy()
-    b = temp.copy()
-    for l in range(0, n_classes):
-        r[temp == l] = label_colours[l, 0]
-        g[temp == l] = label_colours[l, 1]
-        b[temp == l] = label_colours[l, 2]
-
-    rgb = np.zeros((temp.shape[0], temp.shape[1], 3))
-    rgb[:, :, 0] = r / 255.0
-    rgb[:, :, 1] = g / 255.0
-    rgb[:, :, 2] = b / 255.0
-    return rgb
-
-def decode_segmap2(temp):
-    back = [0, 0, 0]
-    seed = [128, 128, 128]
-    priroot = [128, 128, 128]
-    seed = [255, 255, 255]
-    tipp = [255, 255, 255]
-    tipsec = [255, 255, 255] #make it 0,0,0
-
-
-    label_colours = np.array(
-        [
-            back,
-            seed,
-            priroot,
-            seed,
-            tipp,
-            tipsec,
-
-
-        ]
-    )
-    r = temp.copy()
-    g = temp.copy()
-    b = temp.copy()
-    for l in range(0, n_classes):
-        r[temp == l] = label_colours[l, 0]
-        g[temp == l] = label_colours[l, 1]
-        b[temp == l] = label_colours[l, 2]
-
-    rgb = np.zeros((temp.shape[0], temp.shape[1], 3))
-    rgb[:, :, 0] = r / 255.0
-    rgb[:, :, 1] = g / 255.0
-    rgb[:, :, 2] = b / 255.0
-    return rgb
-
-def decode_segmap3(temp):
-    back = [0, 0, 0]
-    priroot = [255, 255, 255]
-    priroottip = [255, 255, 255]
-    lat = [0, 0, 0]
-    lattipp = [0, 0, 0]
-    seed = [0, 0, 0] #make it 0,0,0
-
-
-    label_colours = np.array(
-        [
-            back,
-            priroot,
-            priroottip,
-            lat,
-            lattipp,
-            seed,
-
-
-        ]
-    )
-    r = temp.copy()
-    g = temp.copy()
-    b = temp.copy()
-    for l in range(0, n_classes):
-        r[temp == l] = label_colours[l, 0]
-        g[temp == l] = label_colours[l, 1]
-        b[temp == l] = label_colours[l, 2]
-
-    rgb = np.zeros((temp.shape[0], temp.shape[1], 3))
-    rgb[:, :, 0] = r / 255.0
-    rgb[:, :, 1] = g / 255.0
-    rgb[:, :, 2] = b / 255.0
-    return rgb
-
-
-def decode_segmap4(temp):
-    back = [0, 0, 0]
-    priroot = [0, 0, 0]
-    priroottip = [0, 0, 0]
-    lat = [255, 255, 255]
-    lattipp = [0, 0, 0]
-    seed = [255, 255, 255] #make it 0,0,0
-
-
-    label_colours = np.array(
-        [
-            back,
-            priroot,
-            priroottip,
-            lat,
-            lattipp,
-            seed,
-
-
-        ]
-    )
-    r = temp.copy()
-    g = temp.copy()
-    b = temp.copy()
-    for l in range(0, n_classes):
-        r[temp == l] = label_colours[l, 0]
-        g[temp == l] = label_colours[l, 1]
-        b[temp == l] = label_colours[l, 2]
-
-    rgb = np.zeros((temp.shape[0], temp.shape[1], 3))
-    rgb[:, :, 0] = r / 255.0
-    rgb[:, :, 1] = g / 255.0
-    rgb[:, :, 2] = b / 255.0
-    return rgb
+    rgba = np.zeros((temp.shape[0], temp.shape[1], 4))
+    rgba[:, :, 0] = r / 255.0
+    rgba[:, :, 1] = g / 255.0
+    rgba[:, :, 2] = b / 255.0
+    rgba[:, :, 3] = a / 255.0
+    return rgba
