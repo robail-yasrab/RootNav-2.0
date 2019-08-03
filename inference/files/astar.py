@@ -1,131 +1,222 @@
-import time
-import cv2
-import numpy as np
-import scipy.interpolate
-#from pycubicspline import * 
-from scipy.interpolate import UnivariateSpline
-from scipy import interpolate
-import matplotlib.pyplot as plt
-from PIL import Image
-import scipy.misc as misc
+#import time
+#import cv2
+#from PIL import Image
+#import numpy as np
+from .FibHeapQueue import FibHeap, HeapPQ
+import math
 
-def AStar2(start, goal, neighbor_nodes, distance, cost_estimate, img2):
-    path_img=Image.fromarray(np.uint8(img2))
-    global path_pixels_lat
-    path_pixels_lat = path_img.load()
+def AStar_Pri(start, goal, neighbor_nodes, distance, cost_estimate, weights, max_path_length):
+    width, height = 512, 512 
+    astar_weight = 0.4
 
-    def reconstruct_path(came_from, current_node):
-        path = []
-        if came_from is not None:
-            while current_node is not None:
-                path.append(current_node)
-                current_node = came_from[current_node]
-        if len(path) >=2:
-            return list(path)
-        else:
-            return []
-
-    g_score = {start: 0}
-    f_score = {start: g_score[start] }
-    openset = {start}
-    closedset = set()
-    came_from = {start: None}
-
-    while openset:
-        current = min(openset, key=lambda x: f_score[x])
-        if is_blockedB(current) == True:
-            goal = current
-            #print 'GOT SEC TIP'
-        if current == goal:
-            return reconstruct_path(came_from, goal)
-        openset.remove(current)
-        closedset.add(current)
-        for neighbor in neighbor_nodes(current):
-            if neighbor in closedset:
-                continue
-            if neighbor not in openset:
-                openset.add(neighbor)
-            tentative_g_score = g_score[current] + distance(current, neighbor)
-            if tentative_g_score >= g_score.get(neighbor, float('inf')):
-                continue
-            came_from[neighbor] = current
-            g_score[neighbor] = tentative_g_score
-            f_score[neighbor] = tentative_g_score
-    return []
-
-
-def AStar(start, goal, neighbor_nodes, distance, cost_estimate, decoded):
-
-    path_img=Image.fromarray(np.uint8(decoded))
-    global path_pixels
-    path_pixels = path_img.load()
+    multi_plant = len(goal) > 1
+    goal_pos = list(goal)[0]
     
+    weights = weights.reshape((512*512)).tolist()
 
+    def idx(pos):
+        return pos[1] * width + pos[0]
 
-    def reconstruct_path(came_from, current_node):
-        path = []
-        while current_node is not None:
-            path.append(current_node)
-            current_node = came_from[current_node]
-        return list(reversed(path))
-    g_score = {start: 0}
-    f_score = {start: g_score[start] + cost_estimate(start, goal)}
-    openset = {start}
-    closedset = set()
-    came_from = {start: None}
-    while openset:
-        current = min(openset, key=lambda x: f_score[x])
-        if current == goal:
-            return reconstruct_path(came_from, goal)
-        openset.remove(current)
-        closedset.add(current)
-        for neighbor in neighbor_nodes(current):
-            if neighbor in closedset:
+    total_size = width * height
+    infinity = float("inf")
+    distances = [infinity] * total_size
+
+    visited = [False] * total_size
+    prev = [None] * total_size
+
+    unvisited = HeapPQ()
+
+    node_index = [None] * total_size
+
+    distances[idx(start)] = 0
+
+    start_node = FibHeap.Node(0, start)
+    node_index[idx(start)] = start_node
+    unvisited.insert(start_node)
+
+    count = 0
+    aa = 0
+    completed = False
+    plant_id = -1
+    final_goal_position = None
+
+    while len(unvisited) > 0:
+        n = unvisited.removeminimum()
+
+        upos = n.value
+        uposindex = idx(upos)
+
+        if distances[uposindex] == infinity:
+            break
+
+        if upos in goal:
+            completed = True
+            plant_id = goal[upos]
+            final_goal_position = upos
+            break
+
+        for v in neighbor_nodes(upos):
+            vpos = v[0]
+            vposindex = idx(vpos)
+
+            if is_blocked_edge(vpos):
                 continue
-            if neighbor not in openset:
-                openset.add(neighbor)
-            tentative_g_score = g_score[current] + distance(current, neighbor)
-            if tentative_g_score >= g_score.get(neighbor, float('inf')):
-                continue
-            came_from[neighbor] = current
-            g_score[neighbor] = tentative_g_score
-            f_score[neighbor] = tentative_g_score + cost_estimate(neighbor, goal)
 
-    return []
+            if visited[vposindex]:
+                continue
+
+            # Calculate distance to travel to vpos
+            d = weights[vposindex]
+
+            new_distance = distances[uposindex] + d * v[1]     
+
+            if new_distance < distances[vposindex]:
+                aa = distances[vposindex]
+                vnode = node_index[vposindex]
+
+                if vnode is None:
+                    if multi_plant:
+                        vnode = FibHeap.Node(new_distance, vpos)
+                    else:
+                        remaining = astar_weight * cost_estimate(vpos, goal_pos)
+                        vnode = FibHeap.Node(new_distance + remaining, vpos)
+                    unvisited.insert(vnode)
+                    node_index[vposindex] = vnode
+                    distances[vposindex] = new_distance
+                    prev[vposindex] = upos
+                    aa = distances[vposindex]
+                else:
+                    if multi_plant:
+                        unvisited.decreasekey(vnode, new_distance)
+                    else:
+                        remaining = astar_weight * cost_estimate(vpos, goal_pos)
+                        unvisited.decreasekey(vnode, new_distance + remaining)
+                    distances[vposindex] = new_distance
+                    prev[vposindex] = upos
+                    aa = distances[vposindex]
+
+        visited[uposindex] = True
+
+    if completed and aa <= max_path_length:
+        from collections import deque
+        path = deque()
+        current = final_goal_position
+        while current is not None:
+            path.appendleft(current)
+            current = prev[idx(current)]
+
+        return path, plant_id
+    else:
+        return [], []
+
+def AStar_Lat(start, goal, neighbor_nodes, distance, cost_estimate, weights, max_path_length):
+    width, height = 512, 512 
+
+    weights = weights.reshape((512*512)).tolist()
+
+    def idx(pos):
+        return pos[1] * width + pos[0]
+
+    total_size = width * height
+    infinity = float("inf")
+    distances = [infinity] * total_size
+
+    visited = [False] * total_size
+    prev = [None] * total_size
+
+    unvisited = HeapPQ()
+
+    node_index = [None] * total_size;
+
+    distances[idx(start)] = 0
+
+    start_node = FibHeap.Node(0, start)
+    node_index[idx(start)] = start_node
+    unvisited.insert(start_node)
+
+    count = 0
+    aa= 0 ## to make sure not get too long roots
+    
+    completed = False
+    plant_id = -1
+    primary_id = -1
+    final_goal_position = None
+
+    while len(unvisited) > 0:
+        n = unvisited.removeminimum()
+
+        upos = n.value
+        uposindex = idx(upos)
+
+        if distances[uposindex] == infinity:
+            break
+
+        if upos in goal:
+            completed = True
+            #plant_id = goal[upos]
+            final_goal_position = upos
+
+            if isinstance(goal,dict):
+                primary_id = goal[upos]
+            #print (final_goal_position)
+            break
+
+        for v in neighbor_nodes(upos):
+            vpos = v[0]
+            vposindex = idx(vpos)
+
+            if is_blocked_edge(vpos):
+                continue
+
+            if visited[vposindex]:
+                continue
+
+            # Calculate distance to travel to vpos
+            d = weights[vposindex]
+
+            new_distance = distances[uposindex] + d * v[1]
+
+            if new_distance < distances[vposindex]:
+                aa= distances[vposindex]
+                vnode = node_index[vposindex]
+
+                if vnode is None:
+                    vnode = FibHeap.Node(new_distance, vpos)
+                    unvisited.insert(vnode)
+                    node_index[vposindex] = vnode
+                    distances[vposindex] = new_distance
+                    prev[vposindex] = upos
+                    aa= distances[vposindex]
+                else:
+                    unvisited.decreasekey(vnode, new_distance)
+                    distances[vposindex] = new_distance
+                    prev[vposindex] = upos
+                    aa= distances[vposindex]
+
+        visited[uposindex] = True
+
+    if completed and aa <= max_path_length:
+        from collections import deque
+        path = deque()
+        current = final_goal_position
+        while current is not None:
+            path.appendleft(current)
+            current = prev[idx(current)]
+
+        return path, primary_id
+    else:
+        return [],[]
+
+
+rt2 = math.sqrt(2)
+
 def von_neumann_neighbors(p):
     x, y = p
-    neighbors = [(x-1, y-1),(x-1, y), (x, y-1), (x+1, y), (x, y+1),(x-1, y+1),(x+1, y-1),(x+1, y+1)]
-    #neighbors = [(x - 1, y), (x, y - 1), (x + 1, y), (x, y + 1)]
-    #print (neighbors)
-    return [p for p in neighbors if not is_blocked(p)]
+    return [((x-1, y-1),rt2),((x-1, y),1), ((x, y-1),1), ((x+1, y),1), ((x, y+1),1),((x-1, y+1),rt2),((x+1, y-1),rt2),((x+1, y+1),rt2)]
 
-def von_neumann_neighborsA(p):
-    x, y = p
-    neighbors = [(x-1, y-1),(x-1, y), (x, y-1), (x+1, y), (x, y+1),(x-1, y+1),(x+1, y-1),(x+1, y+1)]
-    #neighbors = [(x - 1, y), (x, y - 1), (x + 1, y), (x, y + 1)]
-    #print (neighbors)
-    return [p for p in neighbors if not is_blockedA(p)]
 def manhattan(p1, p2):
     return abs(p1[0]-p2[0]) + abs(p1[1]-p2[1])
-def squared_euclidean(p1, p2):
-    return (p1[0]-p2[0])**2 + (p1[1]-p2[1])**2
 
-def is_blocked(p):
-    x,y = p
-    #print (x,y)
-    pixel = path_pixels[x,y]
-    if any(c < 1 for c in pixel):
-        return True
-def is_blockedA(p):
-    x,y = p
-    pixel = path_pixels_lat[x,y]
-    if any(c < 1 for c in pixel ):
-        return True
-def is_blockedB(p):
-    x,y = p
-    #print x,y
-    pixel = path_pixels_lat[x,y]
-    #print pixel
-    if any(c == 128 for c in pixel):
-        return True
-
+def is_blocked_edge(p):
+    x, y = p
+    return not (x >= 0 and y >= 0 and x < 512 and y < 512)
