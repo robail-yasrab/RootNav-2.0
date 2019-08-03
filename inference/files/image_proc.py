@@ -6,7 +6,7 @@ import os.path
 from crf import CRF
 
 n_classes = 6
-def enlarge(mask, realw, realh, key, channel_bindings, output_dir, no_segmentation_images):
+def image_output(mask, realw, realh, key, channel_bindings, output_dir, no_segmentation_images):
     ######################## COLOR GT #################################
     decoded = decode_segmap(np.array(mask, dtype=np.uint8))
     decoded = Image.fromarray(np.uint8(decoded*255), 'RGBA')
