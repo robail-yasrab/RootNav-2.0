@@ -128,24 +128,25 @@ class ModelLoader():
                     break
 
         supported_archs = ['hg']
-
+        selected_arch = model_json['configuration']['network']['architecture']
+        
         if model_json is None:
             raise (Exception("Model not found"))
-        elif model_json['architecture'] not in supported_archs:
+        elif selected_arch not in supported_archs:
             raise (Exception("Model architecture {0} not supported".format(model_json['architecture'])))
 
         # Load model
-        weights_file = "{0}/{1}".format(model_dir, model_json['weights'])
+        weights_file = "{0}/{1}".format(model_dir, model_json['configuration']['network']['weights'])
         if not os.path.isfile(weights_file):
             # Attempt to download
             sys.stdout.write("Model weight file not found, downloading...")
             sys.stdout.flush()
-            _download_url_to_file(model_json['url'], weights_file, True)
+            _download_url_to_file(model_json['configuration']['network']['url'], weights_file, True)
             print ("Download complete")
             sys.stdout.flush()
 
         model = None
-        if model_json['architecture'] == 'hg':
+        if selected_arch == 'hg':
             sys.stdout.write('Loading model...')
             sys.stdout.flush()
             model = hg()
