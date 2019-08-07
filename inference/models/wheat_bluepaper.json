@@ -1,8 +1,8 @@
 {
     "name": "wheat_bluepaper",
     "description": "Wheat grown on blue paper",
-    "multi-plant": false,
     "configuration": {
+        "multi-plant": false,
         "network": {
             "architecture": "hg",
             "weights": "wheat_bluepaper.pth",

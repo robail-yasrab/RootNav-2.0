@@ -21,7 +21,7 @@ def run_rootnav(model_data, use_cuda, use_crf, input_dir, output_dir, no_segment
     
     # Load parameters
     model = model_data['model']
-    multi_plant = model_data['multi-plant']
+    multi_plant = model_data['configuration']['multi-plant']
 
     pathing_config = model_data['configuration']['pathing']    
     primary_spline_params = pathing_config['spline-config']['primary']

@@ -1,8 +1,8 @@
 {
     "name": "arabidopsis_plate",
     "description": "Arabidopsis thaliana grown on plates captured with infra-red",
-    "multi-plant": true,
     "configuration": {
+        "multi-plant": true,
         "network": {
             "architecture": "hg",
             "weights": "arabidopsis_plate.pth",
