@@ -1,6 +1,38 @@
 {
     "name": "wheat_bluepaper",
     "description": "Wheat grown on blue paper",
+    "uuid": "2d9ae372-b128-43de-87de-a905ac420b08",
+    "history": {
+        "model": {
+            "parent-model": "",
+            "trained-by": {
+                "fullname": "Robail Yasrab",
+                "email": "robail.yasrab@nottingham.ac.uk"
+            },
+            "license": "https://creativecommons.org/licenses/by-nc/4.0/"
+        },
+        "dataset": {
+            "owner": [
+                {
+                    "fullname": "Jonathan Atkinson",
+                    "affiliation": "University of Nottingham",
+                    "email": "jonathan.atkinson@nottingham.ac.uk"
+                },
+                {
+                    "fullname": "Marcus Griffiths",
+                    "affiliation": "University of Nottingham",
+                    "email": "mgriffiths@noble.org"
+                },
+                {
+                    "fullname": "Darren Wells",
+                    "affiliation": "University of Nottingham",
+                    "email": "darren.wells@nottingham.ac.uk"
+                }
+            ],
+            "url": "https://plantimages.nottingham.ac.uk",
+            "license": "https://creativecommons.org/licenses/by-nc/4.0/"
+        }
+    },
     "configuration": {
         "multi-plant": false,
         "network": {
