@@ -2,7 +2,7 @@ import sys, os
 import torch
 import argparse
 from models import ModelLoader
-from run_rootnav import run_rootnav, list_models
+from run_rootnav import run_rootnav, list_action, info_action
 
 if __name__ == '__main__':
     print("RootNav 2.0")
@@ -10,7 +10,8 @@ if __name__ == '__main__':
 
     # Parser Args
     parser = argparse.ArgumentParser()
-    parser.add_argument('-l', '--list', action='store_true', default=False, help='List available models and exit')
+    parser.add_argument('-l', '--list', action=list_action, nargs=0, help='List available models and exit')
+    parser.add_argument('-i', '--info', action=info_action, nargs=1, help='Print detail on a single model')
     parser.add_argument('--model', default="wheat_bluepaper", metavar='M', help="The trained model to use (default wheat_bluepaper)")
     parser.add_argument('--no_cuda', action='store_true', default=False, help='disables CUDA')
     parser.add_argument('--no_crf', action='store_true', default=False, help='disables CRF post-processing')
@@ -19,11 +20,6 @@ if __name__ == '__main__':
     parser.add_argument('--no_segmentation_images', action='store_true', default=False, help='Reduce output files to minimum')
 
     args = parser.parse_args()
-    
-    # If list, show and exit
-    if args.list:
-        list_models()
-        exit()
 
     # Input and output directory are required
     if not args.input_dir or not args.output_dir:
