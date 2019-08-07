@@ -170,7 +170,7 @@ class list_action(argparse.Action):
 
 class info_action(argparse.Action):
     def __call__(self, parser, args, values, option_string=None):
-        data = ModelLoader.model_info(values[0])
+        data = ModelLoader.model_info(name=values[0])
         if data is not None:
             print (data)
         exit()

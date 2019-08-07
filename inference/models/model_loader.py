@@ -118,18 +118,30 @@ class ModelLoader():
         return model_list
     
     @staticmethod
-    def model_info(name):
+    def model_info(name=None, uuid=None):
+        if name is None and uuid is None:
+            print ("No model name or uuid specified")
+            return None
+
         model_json = None
         model_list = []
         for current_json in ModelLoader.iterate_models():
             if current_json['name'] == name:
                 model_json = current_json
                 break
+            elif uuid is not None and current_json['uuid'] == uuid:
+                model_json = current_json
+                break
 
         if model_json is None:
-            print ("Model {0} not found".format(name))
+            if name is not None:
+                print ("Model {0} not found".format(name))
+            elif uuid is not None:
+                print ("Model with uuid {{{0}}} not found".format(uuid))
+
             return None
         
+        # Model found, construct information
         return model_json
 
     @staticmethod
