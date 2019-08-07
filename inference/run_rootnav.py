@@ -22,18 +22,18 @@ def run_rootnav(model_data, use_cuda, use_crf, input_dir, output_dir, no_segment
     # Load parameters
     model = model_data['model']
     multi_plant = model_data['multi-plant']
-    primary_spline_params = model_data['pathing-config']['spline-config']['primary']
-    lateral_spline_params = model_data['pathing-config']['spline-config']['lateral']
+
+    pathing_config = model_data['configuration']['pathing']    
+    primary_spline_params = pathing_config['spline-config']['primary']
+    lateral_spline_params = pathing_config['spline-config']['lateral']
   
-    net_config = model_data['net-config']
+    net_config = model_data['configuration']['network']
     heatmap_config = net_config['channel-bindings']['heatmap']
     segmap_config = net_config['channel-bindings']['segmentation']
 
     net_input_size = net_config['input-size']
     net_output_size = net_config['output-size']
     normalisation_scale = net_config['scale']
-
-    pathing_config = model_data['pathing-config']
 
     files = glob(os.path.join(input_dir, "*.*"))
     for file in files:

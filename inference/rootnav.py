@@ -19,7 +19,7 @@ if __name__ == '__main__':
     parser.add_argument('--no_segmentation_images', action='store_true', default=False, help='Reduce output files to minimum')
 
     args = parser.parse_args()
-
+    
     # If list, show and exit
     if args.list:
         list_models()

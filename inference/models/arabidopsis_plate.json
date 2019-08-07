@@ -5,23 +5,25 @@
     "multi-plant": true,
     "weights": "arabidopsis_plate.pth",
     "url":"https://cvl.cs.nott.ac.uk/resources/trainedmodels/arabidopsis_plate-ea874d94.pth",
-    "net-config": {
-        "scale": 1,
-        "input-size": 1024,
-        "output-size": 512,
-        "channel-bindings": {
-            "segmentation": { "Background": 0, "Primary": 1, "Lateral": 3 },
-            "heatmap": { "Seed": 5, "Primary": 2, "Lateral": 4 }
-        }
-    },
-    "pathing-config": {
-        "rtree-threshold": 36,
-        "nms-threshold": 0.9,
-        "max-primary-distance": 200,
-        "max-lateral-distance": 200,
-        "spline-config": {
-            "primary": { "tension": 0.5, "spacing": 50 },
-            "lateral": { "tension": 0.5, "spacing": 20 }
+    "configuration": {
+        "network": {
+            "scale": 1,
+            "input-size": 1024,
+            "output-size": 512,
+            "channel-bindings": {
+                "segmentation": { "Background": 0, "Primary": 1, "Lateral": 3 },
+                "heatmap": { "Seed": 5, "Primary": 2, "Lateral": 4 }
+            }
+        },
+        "pathing": {
+            "rtree-threshold": 36,
+            "nms-threshold": 0.9,
+            "max-primary-distance": 200,
+            "max-lateral-distance": 200,
+            "spline-config": {
+                "primary": { "tension": 0.5, "spacing": 50 },
+                "lateral": { "tension": 0.5, "spacing": 20 }
+            }
         }
     }
 }
