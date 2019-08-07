@@ -151,7 +151,20 @@ def run_rootnav(model_data, use_cuda, use_crf, input_dir, output_dir, no_segment
             total = t1-t0
             print ("Time elapsed: {0:.2f}s\n".format(total))
 
+def print_table(table):
+    col_width = [max(len(x) for x in col) for col in zip(*table)]
+    hline = "-" * (sum(w for w in col_width) + 7)
+    print (hline)
+    for i,line in enumerate(table):
+        print ("| " + " | ".join("{0:{1}}".format(x, col_width[i])
+                                for i, x in enumerate(line)) + " |")
+        if i == 0:
+            print (hline)
+    print (hline)
+
 def list_models():
     print ("Model     \t\tDescription")
     for name, desc in ModelLoader.list_models(True):
         print("{0}\t\t{1}".format(name,desc))
+    table_data = [("Model", "Description")] + [(name,desc) for name, desc in ModelLoader.list_models(True)]
+    print_table(table_data)
