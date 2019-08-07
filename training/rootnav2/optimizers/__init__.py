@@ -10,7 +10,7 @@ from torch.optim import Adadelta
 from torch.optim import Adagrad
 from torch.optim import RMSprop
 
-logger = logging.getLogger('rootnav2')
+logger = logging.getLogger('ptsemseg')
 
 key2opt =  {'sgd': SGD,
             'adam': Adam,
