@@ -1,6 +1,33 @@
 {
     "name": "osr_bluepaper",
     "description": "Rapeseed grown on blue paper",
+    "uuid": "5edd7fdc-ceb1-44fa-9dfd-ef1197abac48",
+    "history": {
+        "model": {
+            "parent-model": "2d9ae372-b128-43de-87de-a905ac420b08",
+            "trained-by": {
+                "fullname": "Robail Yasrab",
+                "email": "robail.yasrab@nottingham.ac.uk"
+            },
+            "license": "https://creativecommons.org/licenses/by-nc/4.0/"
+        },
+        "dataset": {
+            "owner": [
+                {
+                    "fullname": "Jonathan Atkinson",
+                    "affiliation": "University of Nottingham",
+                    "email": "jonathan.atkinson@nottingham.ac.uk"
+                },
+                {
+                    "fullname": "Darren Wells",
+                    "affiliation": "University of Nottingham",
+                    "email": "darren.wells@nottingham.ac.uk"
+                }
+            ],
+            "url": "https://plantimages.nottingham.ac.uk",
+            "license": "https://creativecommons.org/licenses/by-nc/4.0/"
+        }
+    },
     "configuration": {
         "multi-plant": false,
         "network": {

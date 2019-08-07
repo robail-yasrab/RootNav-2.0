@@ -1,6 +1,33 @@
 {
     "name": "arabidopsis_plate",
-    "description": "Arabidopsis thaliana grown on plates captured with infra-red",
+    "description": "Arabidopsis thaliana grown on agar plates",
+    "uuid": "82435144-7834-4ff5-bae7-fc61ca804b35",
+    "history": {
+        "model": {
+            "parent-model": "2d9ae372-b128-43de-87de-a905ac420b08",
+            "trained-by": {
+                "fullname": "Robail Yasrab",
+                "email": "robail.yasrab@nottingham.ac.uk"
+            },
+            "license": "https://creativecommons.org/licenses/by-nc/4.0/"
+        },
+        "dataset": {
+            "owner": [
+                {
+                    "fullname": "Jonathan Atkinson",
+                    "affiliation": "University of Nottingham",
+                    "email": "jonathan.atkinson@nottingham.ac.uk"
+                },
+                {
+                    "fullname": "Darren Wells",
+                    "affiliation": "University of Nottingham",
+                    "email": "darren.wells@nottingham.ac.uk"
+                }
+            ],
+            "url": "https://plantimages.nottingham.ac.uk",
+            "license": "https://creativecommons.org/licenses/by-nc/4.0/"
+        }
+    },
     "configuration": {
         "multi-plant": true,
         "network": {
