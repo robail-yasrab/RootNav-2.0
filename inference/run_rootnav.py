@@ -162,9 +162,15 @@ def print_table(table):
             print (hline)
     print (hline)
 
-def list_models():
-    print ("Model     \t\tDescription")
-    for name, desc in ModelLoader.list_models(True):
-        print("{0}\t\t{1}".format(name,desc))
-    table_data = [("Model", "Description")] + [(name,desc) for name, desc in ModelLoader.list_models(True)]
-    print_table(table_data)
+class list_action(argparse.Action):
+    def __call__(self, parser, args, values, option_string=None):
+        table_data = [("Model", "Description")] + [(name,desc) for name, desc in ModelLoader.list_models(True)]
+        print_table(table_data)
+        exit()
+
+class info_action(argparse.Action):
+    def __call__(self, parser, args, values, option_string=None):
+        data = ModelLoader.model_info(values[0])
+        if data is not None:
+            print (data)
+        exit()

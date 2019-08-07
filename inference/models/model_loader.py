@@ -95,7 +95,7 @@ def _download_url_to_file(url, dst, progress):
 
 class ModelLoader():
     @staticmethod
-    def list_models(verbose = False):
+    def iterate_models():
         # Scan model Directory
         model_dir = os.path.dirname(os.path.realpath(__file__))
         files = glob("{0}/*.json".format(model_dir))
@@ -104,13 +104,33 @@ class ModelLoader():
         for file in files:
             with open(file, 'r') as f:
                 model_json = json.loads(f.read())
+                yield model_json
+
+    @staticmethod
+    def list_models(verbose = False):
+        model_list = []
+        for model_json in ModelLoader.iterate_models():
                 if not verbose:
                     model_list.append(model_json['name'])
                 else:
                     model_list.append((model_json['name'], model_json['description']))
 
-
         return model_list
+    
+    @staticmethod
+    def model_info(name):
+        model_json = None
+        model_list = []
+        for current_json in ModelLoader.iterate_models():
+            if current_json['name'] == name:
+                model_json = current_json
+                break
+
+        if model_json is None:
+            print ("Model {0} not found".format(name))
+            return None
+        
+        return model_json
 
     @staticmethod
     def get_model(name, gpu=True):
@@ -128,11 +148,12 @@ class ModelLoader():
                     break
 
         supported_archs = ['hg']
-        selected_arch = model_json['configuration']['network']['architecture']
         
         if model_json is None:
             raise (Exception("Model not found"))
-        elif selected_arch not in supported_archs:
+        
+        selected_arch = model_json['configuration']['network']['architecture']
+        if selected_arch not in supported_archs:
             raise (Exception("Model architecture {0} not supported".format(model_json['architecture'])))
 
         # Load model
