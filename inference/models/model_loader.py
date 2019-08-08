@@ -61,7 +61,7 @@ def _download_url_to_file(url, dst, progress):
         file_size = int(content_length[0])
 
     f = tempfile.NamedTemporaryFile(delete=False)
-    
+
     hash_prefix = None
     pattern = ".*\/[0-9A-Za-z_]*-(?P<hashprefix>.*)\.pkl"
     match = re.match(pattern, url)
@@ -107,6 +107,29 @@ class ModelLoader():
                 yield model_json
 
     @staticmethod
+    def load_json(name=None, uuid=None, verbose=True):
+        if verbose and name is None and uuid is None:
+            print ("No model name or uuid specified")
+            return None
+
+        model_json = None
+        for current_json in ModelLoader.iterate_models():
+            if current_json['name'] == name:
+                model_json = current_json
+                break
+            elif uuid is not None and current_json['uuid'] == uuid:
+                model_json = current_json
+                break
+
+        if verbose and model_json is None:
+            if name is not None:
+                print ("Model {0} not found".format(name))
+            elif uuid is not None:
+                print ("Model with uuid {{{0}}} not found".format(uuid))
+
+        return model_json
+
+    @staticmethod
     def list_models(verbose = False):
         model_list = []
         for model_json in ModelLoader.iterate_models():
@@ -116,54 +139,86 @@ class ModelLoader():
                     model_list.append((model_json['name'], model_json['description']))
 
         return model_list
-    
+
     @staticmethod
     def model_info(name=None, uuid=None):
-        if name is None and uuid is None:
-            print ("No model name or uuid specified")
-            return None
-
-        model_json = None
-        model_list = []
-        for current_json in ModelLoader.iterate_models():
-            if current_json['name'] == name:
-                model_json = current_json
-                break
-            elif uuid is not None and current_json['uuid'] == uuid:
-                model_json = current_json
-                break
-
+        model_json = ModelLoader.load_json(name=name, uuid=uuid)
         if model_json is None:
-            if name is not None:
-                print ("Model {0} not found".format(name))
-            elif uuid is not None:
-                print ("Model with uuid {{{0}}} not found".format(uuid))
-
             return None
-        
+
         # Model found, construct information
-        return model_json
+        model_name = model_json['name']
+        model_description = model_json['description']
+        model_uuid = model_json['uuid']
+        model_history = model_json['history']
+
+        multi_plant = model_json['configuration']['multi-plant']
+
+        training_history = []
+
+        # Extract training and training history
+        parent_uuid = model_history['model']['parent-model']
+        if parent_uuid is not None and parent_uuid != "":
+            training_history.append('[{0}]'.format(name))
+            while parent_uuid is not None and parent_uuid != "":
+                parent_model = ModelLoader.load_json(uuid=parent_uuid, verbose=False)
+                training_history.append(parent_model['name'])
+                parent_uuid = parent_model['history']['model']['parent-model']
+
+            # Format training history
+            col_width = max((len(c) for c in training_history))
+            format_code = ["{1:^{0}}".format(col_width, t) for t in training_history]
+            symbols = ["{1:^{0}}".format(col_width, "^")] * len(format_code)
+            training_history_formatstr = [x for t in zip(format_code, symbols) for x in t]
+            del training_history_formatstr[-1]
+
+        # Trained by
+        trained_by = model_history['model']['trained-by']
+        if isinstance(trained_by, list):
+            # Select primary trainer
+            trained_by = trained_by[0]
+
+        trained_by_formatstr = "{0} <{1}>, {2}".format(trained_by['fullname'],
+                                                       trained_by['email'],
+                                                       trained_by['affiliation'])
+
+        # Dataset information
+        dataset = model_history['dataset']
+        owner = dataset['owner']
+        if isinstance(owner, list):
+            # Select primary owner
+            owner = owner[0]
+
+        dataset_owner_formatstr = "{0} <{1}>, {2}".format(owner['fullname'],
+                                                          owner['email'],
+                                                          owner['affiliation'])
+
+        dataset_url = dataset['url']
+
+        return [("Model", model_name),
+                ("Description", model_description),
+                ("Multi plant", "Yes" if multi_plant else "No"),
+                ("Trained by", trained_by_formatstr),
+                ("Parent Model", "Trained from scratch" if len(training_history) == 0 else "Transferred from {0}".format(training_history[-1])),
+                ("Training history", training_history_formatstr if len(training_history) > 0 else []),
+                ("Dataset owner", dataset_owner_formatstr),
+                ("Dataset URL", dataset_url),
+                ("UUID", model_uuid)]
+
+        return output_dict
 
     @staticmethod
     def get_model(name, gpu=True):
         model_dir = os.path.dirname(os.path.realpath(__file__))
         files = glob("{0}/*.json".format(model_dir))
-        
-        model_json = None
 
-        model_list = []
-        for file in files:
-            with open(file, 'r') as f:
-                current_json = json.loads(f.read())
-                if current_json['name'] == name:
-                    model_json = current_json
-                    break
+        model_json = ModelLoader.load_json(name=name)
 
         supported_archs = ['hg']
-        
+
         if model_json is None:
             raise (Exception("Model not found"))
-        
+
         selected_arch = model_json['configuration']['network']['architecture']
         if selected_arch not in supported_archs:
             raise (Exception("Model architecture {0} not supported".format(model_json['architecture'])))

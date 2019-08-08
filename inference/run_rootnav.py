@@ -172,5 +172,15 @@ class info_action(argparse.Action):
     def __call__(self, parser, args, values, option_string=None):
         data = ModelLoader.model_info(name=values[0])
         if data is not None:
-            print (data)
+            left_col_width = max([len(t[0]) for t in data])
+            for (k,v) in data:
+                if not isinstance(v, list):
+                    print ("{1:>{0}}: {2}".format(left_col_width, k, v))
+                else:
+                    if (len(v) <= 1):
+                        continue
+                        
+                    print ("{1:>{0}}: {2}".format(left_col_width, k, v[0]))
+                    for i in range(1,len(v)):
+                        print ("{1:>{0}}  {2}".format(left_col_width, "", v[i])) 
         exit()
