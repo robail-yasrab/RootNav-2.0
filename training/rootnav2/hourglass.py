@@ -1,8 +1,10 @@
-
+'''
+Nested Hourglass network inserted in the pre-activated Resnet 
+By ROBAIL YASRAB
+'''
 import torch.nn as nn
 import torch.nn.functional as F
-print 'hourglass biu biu'
-# from .preresnet import BasicBlock, Bottleneck
+#print 'Nested Hourglass Booting'
 
 
 __all__ = ['HourglassNet', 'hg']
@@ -91,7 +93,6 @@ class Hourglass(nn.Module):
         super(Hourglass, self).__init__()
         self.depth = depth
         self.block = block
-        self.upsample = nn.Upsample(scale_factor=2)
         self.hg = self._make_hour_glass(block, num_blocks, planes, depth)
 
     def _make_residual(self, block, num_blocks, planes):
@@ -121,7 +122,7 @@ class Hourglass(nn.Module):
         else:
             low2 = self.hg[n-1][3](low1)
         low3 = self.hg[n-1][2](low2)
-        up2 = self.upsample(low3)
+        up2 = F.interpolate(low3, scale_factor=2, mode='nearest')
         out = up1 + up2
         return out
 
@@ -130,7 +131,6 @@ class Hourglass(nn.Module):
 
 
 class HourglassNet(nn.Module):
-    '''Hourglass model from Newell et al ECCV 2016'''
     def __init__(self, block, num_stacks=1, num_blocks=1, num_classes=5):
         super(HourglassNet, self).__init__()
 
@@ -142,22 +142,35 @@ class HourglassNet(nn.Module):
         self.bn1 = nn.BatchNorm2d(self.inplanes) 
         self.relu = nn.ReLU(inplace=True)
         self.layer1 = self._make_residual(block, self.inplanes, 1)
-        self.layer2 = self._make_residual(block, self.inplanes, 1)
-        self.layer3 = self._make_residual(block, self.num_feats, 1)
+        self.layer2 = self._make_residual(block, 64, 1)
+        self.layer3 = self._make_residual(block, 128, 1)
+        self.layer4 = self._make_residual(block, 128, 1)
+        self.layer5 = self._make_residual(block, 64, 1)
         self.maxpool = nn.MaxPool2d(2, stride=2)
-        self.tail_deconv2 = nn.ConvTranspose2d(128, 128, 4, 2, 1, bias=False)
-        self.tail_bn2 = nn.BatchNorm2d(128)
+        self.tail_deconv2 = nn.ConvTranspose2d(256, 256, 4, 2, 1, bias=False)
+        self.tail_bn2 = nn.BatchNorm2d(256)
+
+        self.conv2 = nn.Conv2d(128, self.inplanes, kernel_size=1, stride=1, padding=0,
+                               bias=True)
+
+        self.conv3 = nn.Conv2d(128, 6, kernel_size=1, stride=1, padding=0,
+                               bias=True)
+
+        self.soft_conv = nn.Conv2d(128, 3, kernel_size=1, stride=1, padding=0,
+                               bias=True)
+
+        self.soft_max = nn.Softmax2d()
 
 
 
 
-        print num_stacks
-        print num_blocks
+        #print num_stacks
+        #print num_blocks
         # build hourglass modules
         ch = self.num_feats*block.expansion
         hg, res, fc, score, fc_, score_ = [], [], [], [], [], []
         for i in range(num_stacks):
-            hg.append(Hourglass(block, num_blocks, self.num_feats, 4))
+            hg.append(Hourglass(block, num_blocks, 128, 4))
             res.append(self._make_residual(block, self.num_feats, num_blocks))
             fc.append(self._make_fc(ch, ch))
             score.append(nn.Conv2d(ch, num_classes, kernel_size=1, bias=True))
@@ -201,30 +214,55 @@ class HourglassNet(nn.Module):
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x) 
+        #print x.shape, "CONV 1" 
 
         x = self.layer1(x)  
+        #print x.shape, "ResBlock 1" 
+
         x = self.maxpool(x)
-        x = self.layer2(x)  
+        #print x.shape, "MAXPOOL 1" 
+
+        x = self.layer2(x) 
+        #print x.shape, "ResBlock 2" 
+        x = self.maxpool(x) 
+        #print x.shape, "MAXPOOL 2" 
         x = self.layer3(x)  
+        #print x.shape, "ResBlock 3" 
+
+        for i in range(self.num_stacks):
+            y = self.hg[i](x)          
+            out.append(y)
+            x= out[-1]
+        #print out[-1].shape, "HG" 
 
         x= self.tail_deconv2(x)
         x = self.tail_bn2(x)
+        #print x.shape, "DE-Conv 1"
+
+        x = self.layer4(x)  
+        #print x.shape, "ResBlock 4"  
 
 
+        x= self.tail_deconv2(x)
+        x = self.tail_bn2(x)
+        #print x.shape, "DE-Conv 2"
+
+
+        x = self.layer5(x)  
+        #print x.shape, "ResBlock 5"  
+
+        x = self.conv2(x)
+        #print x.shape, "CON 2" 
+        y = x
+        
+        x = self.conv3(x)
+        #print x.shape, "CON 3" 
  
+        z = self.soft_conv(y)
+        z = self.soft_max(z)
+        #print z.shape, "softmax" 
 
-        for i in range(self.num_stacks):
-            y = self.hg[i](x)
-            y = self.res[i](y)
-            y = self.fc[i](y)
-            score = self.score[i](y)
-            out.append(score)
-            if i < self.num_stacks-1:
-                fc_ = self.fc_[i](y)
-                score_ = self.score_[i](score)
-                x = x + fc_ + score_
-
-        return out
+        return x, z
 
 
 def hg(**kwargs):
