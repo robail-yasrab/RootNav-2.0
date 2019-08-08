@@ -5,9 +5,6 @@ from models import ModelLoader
 from run_rootnav import run_rootnav, list_action, info_action
 
 if __name__ == '__main__':
-    print("RootNav 2.0")
-    sys.stdout.flush()
-
     # Parser Args
     parser = argparse.ArgumentParser()
     parser.add_argument('-l', '--list', action=list_action, nargs=0, help='List available models and exit')
@@ -20,6 +17,10 @@ if __name__ == '__main__':
     parser.add_argument('--no_segmentation_images', action='store_true', default=False, help='Reduce output files to minimum')
 
     args = parser.parse_args()
+
+    # Title
+    print("RootNav 2.0")
+    sys.stdout.flush()
 
     # Input and output directory are required
     if not args.input_dir or not args.output_dir:
