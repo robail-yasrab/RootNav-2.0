@@ -9,29 +9,27 @@ def _simple_argmax(softmax):
 class CRF():
     @staticmethod
     def ApplyCRF(model_softmax, image, use_crf):
-        if not use_crf:
-            return _simple_argmax(model_softmax)
-
-        try:
-            import pydensecrf.densecrf as dcrf
-        except ImportError:
-            # Skip CRF processing if requested but no module available
-            mask = _simple_argmax(model_softmax)
+        mask = None
+        if use_crf:
+            try:
+                import pydensecrf.densecrf as dcrf
+                model_softmax = model_softmax.numpy()
+                image = np.ascontiguousarray(image)
+                unary = -np.log(np.clip(model_softmax,1e-5,1.0))
+                c, h, w = unary.shape
+                unary = unary.transpose(0, 2, 1)
+                unary = unary.reshape(6, -1)
+                unary = np.ascontiguousarray(unary)
+                d = dcrf.DenseCRF2D(w, h, 6)
+                d.setUnaryEnergy(unary)
+                d.addPairwiseBilateral(sxy=5, srgb=3, rgbim=image, compat=1)
+                q = d.inference(50)
+                mask = np.argmax(q, axis=0).reshape(w, h).transpose(1, 0)
+            except ImportError:
+                # Skip CRF processing if requested but no module available
+                mask = _simple_argmax(model_softmax)
         else:
-            model_softmax = model_softmax.numpy()
-            image = np.ascontiguousarray(image)
-            unary = -np.log(model_softmax)
-            unary = unary.transpose(2, 1, 0)
-            w, h, c = unary.shape
-            unary = unary.transpose(2, 0, 1)
-            unary = unary.reshape(6, -1)
-            unary = np.ascontiguousarray(unary)
-
-            d = dcrf.DenseCRF2D(w, h, 6)
-            d.setUnaryEnergy(unary)
-            d.addPairwiseBilateral(sxy=5, srgb=3, rgbim=image, compat=1)
-            q = d.inference(50)
-            mask = np.argmax(q, axis=0).reshape(w, h).transpose(1, 0)
+            mask = _simple_argmax(model_softmax)
         return mask
 
     @staticmethod
