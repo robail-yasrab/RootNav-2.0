@@ -7,9 +7,10 @@
             "parent-model": "2d9ae372-b128-43de-87de-a905ac420b08",
             "trained-by": {
                 "fullname": "Robail Yasrab",
+                "affiliation": "University of Nottingham",
                 "email": "robail.yasrab@nottingham.ac.uk"
             },
-            "license": "https://creativecommons.org/licenses/by-nc/4.0/"
+            "license": "https://creativecommons.org/licenses/by/4.0/"
         },
         "dataset": {
             "owner": [
