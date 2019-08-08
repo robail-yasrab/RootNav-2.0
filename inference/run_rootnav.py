@@ -130,7 +130,7 @@ def run_rootnav(model_data, use_cuda, use_crf, input_dir, output_dir, no_segment
 
             # Search across lateral roots
             for idxx, i in enumerate(lateral_tips):
-                path, pid = AStar_Lat(i, lateral_goal_dict, von_neumann_neighbors, manhattan, manhattan, lateral_weights, pathing_config['max-primary-distance'])
+                path, pid = AStar_Lat(i, lateral_goal_dict, von_neumann_neighbors, manhattan, manhattan, lateral_weights, pathing_config['max-lateral-distance'])
                 if path !=[]:
                     scaled_lateral_path = [(x*factor2,y*factor1) for (x,y) in reversed(path)]
                     lateral_root = Root(scaled_lateral_path, spline_tension = lateral_spline_params['tension'], spline_knot_spacing = lateral_spline_params['spacing'])
