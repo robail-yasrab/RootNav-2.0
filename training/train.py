@@ -21,9 +21,7 @@ from torchvision import transforms, utils
 from torch.utils import data
 from tqdm import tqdm
 from rootnav2.hourglass import hg
-#from rootnav2.multihg2 import hg1
 import cv2
-from rootnav2.models import get_model
 from rootnav2.loss import get_loss_function
 from rootnav2.loader import get_loader 
 from rootnav2.utils import get_logger
@@ -32,33 +30,28 @@ from rootnav2.augmentations import get_composed_augmentations
 from rootnav2.schedulers import get_scheduler
 from rootnav2.optimizers import get_optimizer
 from tensorboardX import SummaryWriter
-#weights = [0.5794, 3.6466, 0.0041, 25.7299]
-weights =[0.0007,0.7218,1.7989,0.0939,1.6279,7.3893]
+weights =[0.0021,0.1861,2.3898,0.6323,28.6333,31.0194]
 class_weights = torch.FloatTensor(weights).cuda()
 def show_example(img, gt_mask, pred_mask):
     img_np = img.cpu().data.numpy()
 
     img_np = np.transpose(img_np, [1,2,0])
-    #img_np += 128
     img_np = cv2.resize(img_np, (512,512))
-    #print img_np.shape 
-    #gt_mask_np = gt_mask.cpu().data.numpy()
+
 
     gt_mask_np = np.transpose(gt_mask, [1,2,0]) * 255.0   
     gt_mask_np = np.repeat(gt_mask_np, 3, 2)
     gt_mask_np = cv2.resize(gt_mask_np, (512,512))
     pred_mask = np.asarray(pred_mask) #.cpu().numpy()
-    #pred_mask = np.transpose(pred_mask, [1,2,0]) * 255.0
-    #pred_mask = np.repeat(pred_mask, 3, 2)
+
     pred_mask = cv2.resize(pred_mask, (512,512))
-    #print img_np.shape, gt_mask_np.shape, pred_mask.shape
+
     img = np.concatenate((img_np, gt_mask_np, pred_mask), axis=1)
     plt.imshow(img, cmap = 'gray', interpolation = 'bicubic')
     plt.xticks([]), plt.yticks([])  # to hide tick values on X and Y axis
     plt.show()
     plt.savefig('3pic', bbox_inches="tight", pad_inches=0)
-    #cv2.namedWindcdow('i', img.astype(np.uint8))
-    #cv2.waitKey(5)
+
     
 def train(cfg, writer, logger):
     
@@ -78,6 +71,8 @@ def train(cfg, writer, logger):
     # Setup Dataloader
     data_loader = get_loader(cfg['data']['dataset'])
     data_path = cfg['data']['path']
+
+    print "Dataset Loading from...", data_path
 
     t_loader = data_loader(
         data_path,
@@ -161,56 +156,22 @@ def train(cfg, writer, logger):
             hm = hm.to(device)
             gt = gt.to(device)
 
-            outputs1= model(images)
+            outputs1, output2= model(images)
             
-            #loss1 = 0
-            #for o in outputs:
-            #    loss1 += loss(o, labels)
-            out1= outputs1[-1]
+            #out1= outputs1[-1]
 
-
-            #out1 = out.unsqueeze(0)
-            #out2 = out2.unsqueeze(0)
-            #hm = hm.squeeze(0)    
             optimizer.zero_grad()
             
-            loss1 = loss(input=out1, target=labels)
-            
-            out2= out1[:,1:,:,:] 
-            
-            loss2 = criterion(input=out2, target=gt)
-            out5= out1[:,5:6,:,:]           
-            out4= out1[:,4:5,:,:]
-            out2= out1[:,2:3,:,:]
-
-            o = torch.cat((out2, out4,  out5), 1)
-            #o = o.unsqueeze(0)
-
-
-            loss3 = criterion(input=o, target=hm)
-
-            #out4= out1[:,4,:,:]
-            #out2= out1[:,2,:,:]
-  
-
-            #o = torch.cat((out2, out4), 0)
-            #o = o.unsqueeze(0)
-
-            #loss2 = criterion(input=o, target=hm)
-
+            loss1 = loss(input=outputs1, target=labels)
+                       
+            loss2 = criterion(input=output2, target=hm)
 
             loss1.backward(retain_graph=True)
             loss2.backward(retain_graph=True)
-            loss3.backward()
-            #lossx = loss1 + (loss2)
-            #lossx.backward()
+     
+
             optimizer.step()
-            #pred1 = np.squeeze(out2[0:1,:,:,:].data.max(1)[1].cpu().numpy(), axis=0) 
-            #####################picture ###################
-            #decoded = v_loader.decode_segmap(pred1)
-            #images = images.squeeze(0)
-            #show_example(images, labels, decoded)
-            #############################################   
+ 
 
             time_meter.update(time.time() - start_ts)
 
@@ -219,12 +180,12 @@ def train(cfg, writer, logger):
                 fmt_str = "Iter [{:d}/{:d}]  Loss: {:.4f}  Time/Image: {:.4f}"
                 print_str = fmt_str.format(i + 1,
                                            cfg['training']['train_iters'], 
-                                           loss2.item(),
+                                           loss1.item(),
                                            time_meter.avg / cfg['training']['batch_size'])
 
                 print(print_str)
                 logger.info(print_str)
-                writer.add_scalar('loss/train_loss', loss2.item(), i+1)
+                writer.add_scalar('loss/train_loss', loss1.item(), i+1)
                 time_meter.reset()
 
             if (i + 1) % cfg['training']['val_interval'] == 0 or \
@@ -234,22 +195,15 @@ def train(cfg, writer, logger):
                     for i_val, (images_val, labels_val, hm, gt) in tqdm(enumerate(valloader)):
                         images_val = images_val.to(device)
                         labels_val = labels_val.to(device)
-                        #hm = hm.to(device)
                         gt = gt.to(device)
-                        outputs1= model(images_val)
-                        res1= outputs1[-1]
-                        #res1 = res1.unsqueeze(0)
-                        #res2 = res2.unsqueeze(0)
-                        
-                        #val_loss = loss(outputs[0], labels_val)
-                        #for j in range(1, len(outputs)):
-                        #    val_loss += loss(outputs[j], labels_val)
-                        val_loss1 = loss(input=res1, target=labels_val)
-                        #val_loss2 = loss(input=res1, target=labels_val)
+                        outputs1, outputs2= model(images_val)
                         
 
-                        pred = res1.data.max(1)[1].cpu().numpy()
-                        pred1 = np.squeeze(res1[0:1,:,:,:].data.max(1)[1].cpu().numpy(), axis=0)
+                        val_loss1 = loss(input=outputs1, target=labels_val)
+                        
+
+                        pred = outputs1.data.max(1)[1].cpu().numpy()
+                        pred1 = np.squeeze(outputs1[0:1,:,:,:].data.max(1)[1].cpu().numpy(), axis=0)
                         gt = labels_val.data.cpu().numpy()
 
 
@@ -274,10 +228,8 @@ def train(cfg, writer, logger):
                 running_metrics_val.reset()
                 #####################picture ##################              
                 decoded = v_loader.decode_segmap(pred1)              
-                #images_val = images_val.squeeze(0)
-                #show_example(images_val, gt, decoded)
                 #############################################  
-                out_path = '1.jpg'
+                out_path = 'snapshot.jpg'
                 misc.imsave(out_path, decoded)
                 #############################################
 
@@ -307,7 +259,7 @@ if __name__ == "__main__":
         "--config",
         nargs="?",
         type=str,
-        default="configs/root.yml",
+        default="configs/rootnav2.yml",
         help="Configuration file to use"
     )
 

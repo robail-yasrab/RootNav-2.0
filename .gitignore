@@ -3,4 +3,5 @@ inference/Petri_dish/
 inference/Blue_paper_single/
 inference/models/*.pkl
 inference/models/*.pth
+training/runs/*
 *.pyc

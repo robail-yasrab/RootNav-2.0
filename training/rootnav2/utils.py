@@ -47,7 +47,7 @@ def convert_state_dict(state_dict):
 
 
 def get_logger(logdir):
-    logger = logging.getLogger('rootnav2')
+    logger = logging.getLogger('ptsemseg')
     ts = str(datetime.datetime.now()).split('.')[0].replace(" ", "_")
     ts = ts.replace(":", "_").replace("-","_")
     file_path = os.path.join(logdir, 'run_{}.log'.format(ts))
