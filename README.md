@@ -1,13 +1,14 @@
 # RootNav 2.0
 This is the RootNav 2.0 Code repository. This README and the repository code are being improved daily as we prepare for publication, please check back for new features and documentation soon!
 
+### 8 August 2019 - New features
+* CRF support is now optional, allowing those that have trouble installing this requisite to skip it.
+* You can now look at information on a trained model using `python rootnav.py --info modelname`. 
+* Models now include more detailed information on the trainer, and owners of the dataset used.
+* Models also include information on which networks were used for transfer learning, if used.
+* Training code now uses a simpler configuration file, we are continuing work on this.
 
-### 29 July 2019 - New features
-* Python 3.6 support. This should make it much easier to install on Windows, for example. It's also made RootNav 2.0 about 30% faster!
-* Simplified environment and requirement files. Some unecessary dependencies have been removed to speed up and simplify installation.
-* CPU only support, RootNav 2.0 will now run on a laptop and still pretty quickly.
-* Automatic download of trained models.
-* Command line parameter support to list and select models, as well as input and output directories
+Full updates may be found in the [change log](CHANGELOG.md).
 
 ### Upcoming Features
 * Extended documentation to make clear how the tool is used
@@ -30,7 +31,9 @@ Library support in other Operating Systems is more complex, and we recommend usi
 conda env create -f environment.yml
 conda activate rootnav2
 ```
-This will download and set up all the required libraries, providing you with a Python 3.6 installation. For those with access to Python 2.6 only, you will find a compatible version in the `py2` branch.
+This will download and set up all the required libraries, providing you with a Python 3.6 installation. For those with access to Python 2.6 only, you will find a compatible version in the [py2 branch](https://github.com/robail-yasrab/RootNav-2.0/tree/py2) .
+
+Note: If you have `Segmentation fault:11` errors on a Mac computer, this is likely caused by an issue with the opencv conda installation. We are working on removing the offending function, you will find a fix in the [dev branch](https://github.com/robail-yasrab/RootNav-2.0/tree/dev) 
 
 ## Using the tool
 The majority of users will want to run RootNav 2.0 on new images, in which case all the code you need is in the `inference` folder.
