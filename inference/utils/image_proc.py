@@ -1,10 +1,10 @@
 import os
 import numpy as np
-import cv2
 import scipy.misc as misc
 from PIL import Image
 from os import path
 from crf import CRF
+from scipy import ndimage
 
 n_classes = 6
 def image_output(mask, realw, realh, key, channel_bindings, output_dir, no_segmentation_images):
@@ -31,10 +31,10 @@ def image_output(mask, realw, realh, key, channel_bindings, output_dir, no_segme
         decoded2.save(os.path.join(output_dir, "{0}_C2.png".format(key)))
 
 def distance_map(mask):
-    d = cv2.distanceTransform(mask, cv2.DIST_L2, 3)
+    d = ndimage.distance_transform_edt(mask)
  
     mx = 3
-    gamma = 0.5
+    gamma = 0.1
     epsilon = 0.01
     background_penalty = 10
 
@@ -47,10 +47,10 @@ def distance_map(mask):
     return d
     
 def distance_to_weights(mask):
-    d = cv2.distanceTransform(mask, cv2.DIST_L2, 3)
+    d = ndimage.distance_transform_edt(mask)
 
     mx = 2
-    gamma = 0.5
+    gamma = 0.1
     epsilon = 0.01
     background_penalty = 10
 
