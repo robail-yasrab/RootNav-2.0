@@ -55,6 +55,9 @@ python rootnav.py --model wheat_bluepaper input_directory output_directory
 ```
 RootNav will read any images within specified input directory, and output images and RSML to the output directory.
 
+#### Analysing Root Systems
+RootNav 2.0 doesn't measure root systems itself, it outputs architectures to RSML files, which may be analysed using a suitable tool. We have adapted the original viewer to perform this function, which you can find on github [[RootNav Viewer](https://github.com/robail-yasrab/RootNav-Viewer-2.0)]. The benefit of separating the extraction of root systems and measurement is that additional measurements may be taken at a later date without requiring re-analysis of the original images. This makes analysing and re-analysing many root systems very straightforward. The viewer can also be extended using plugin code to capture new measurements if desired, however most common phenotypes are already built into the tool.
+
 ### Training
 Training code may be found in the training folder. Instructions on training models are given below. If you would like to collaborate on the development of new models for RootNav 2.0, please contact us.
 
