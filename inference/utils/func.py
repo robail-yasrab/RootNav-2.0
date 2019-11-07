@@ -36,7 +36,7 @@ def nonmaximalsuppression(tensor, threshold):
         i += offset
         val = pred_data[i]
         if val >= threshold and val >= pred_data[i-1] and val >= pred_data[i+1] and val >= pred_data[i-stride]:
-            points.append([i - numel + stride - offset, stride])
+            points.append([i - numel + stride - offset, stride - 1])
 
     # Front x==0
     for i in range(stride, stride * (stride - 1), stride):
