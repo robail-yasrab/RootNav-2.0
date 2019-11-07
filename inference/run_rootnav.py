@@ -106,6 +106,14 @@ def run_rootnav(model_data, use_cuda, use_crf, input_dir, output_dir, no_segment
             seed_locations = rrtree(heatmap_points['Seed'], pathing_config['rtree-threshold'])
             primary_tips = rrtree(heatmap_points['Primary'], pathing_config['rtree-threshold'])
 
+            if len(seed_locations) < 1:
+                print ("No seed location found - no output")
+                continue
+
+            if len(primary_tips) < 1:
+                print ("No first order roots found - no output")
+                continue
+
             primary_goal_dict = {pt:ix for ix,pt in enumerate(seed_locations)}
             lateral_goal_dict = {}
 
@@ -138,6 +146,11 @@ def run_rootnav(model_data, use_cuda, use_crf, input_dir, output_dir, no_segment
 
             # Filter plants with no roots (E.g. incorrect seed location)
             plants = [plant for plant in plants if plant.roots is not None and len(plant.roots) > 0]
+
+  	        if len(plants) < 1:
+                # No viable primary roots found for any plant
+                print ("No valid paths found between tips and seed locations - no output")
+                continue
 
             # Output to RSML
             RSMLWriter.save(key, output_dir, plants)
