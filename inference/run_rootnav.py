@@ -147,7 +147,7 @@ def run_rootnav(model_data, use_cuda, use_crf, input_dir, output_dir, no_segment
             # Filter plants with no roots (E.g. incorrect seed location)
             plants = [plant for plant in plants if plant.roots is not None and len(plant.roots) > 0]
 
-  	        if len(plants) < 1:
+            if len(plants) < 1:
                 # No viable primary roots found for any plant
                 print ("No valid paths found between tips and seed locations - no output")
                 continue
