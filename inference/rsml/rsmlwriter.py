@@ -39,7 +39,7 @@ class RSMLWriter():
 
                 poly = spline.polyline(sample_spacing = 1)
                 for pt in poly:
-                    point = ET.SubElement(polyline, 'point', x=str(pt[0]), y=str(pt[0]))
+                    point = ET.SubElement(polyline, 'point', x=str(pt[0]), y=str(pt[1]))
 
                 for lateral_id, lat in enumerate(pri.roots):
                     latroot = ET.SubElement(priroot, 'root', id=str(primary_id+1)+"."+str(lateral_id+1), label="lateral")
@@ -53,7 +53,7 @@ class RSMLWriter():
 
                     lat_poly = lat_spline.polyline(sample_spacing = 1)
                     for pt in lat_poly:
-                        point = ET.SubElement(lat_polyline, 'point', x=str(pt[0]), y=str(pt[0]))
+                        point = ET.SubElement(lat_polyline, 'point', x=str(pt[0]), y=str(pt[1]))
 
         tree = ET.ElementTree(root)
         rsml_text = prettify(root)
