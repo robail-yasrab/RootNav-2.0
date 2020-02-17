@@ -1,12 +1,8 @@
 # RootNav 2.0
 This is the RootNav 2.0 Code repository. This README and the repository code are being improved daily as we prepare for publication, please check back for new features and documentation soon!
 
-### 8 August 2019 - New features
-* CRF support is now optional, allowing those that have trouble installing this requisite to skip it.
-* You can now look at information on a trained model using `python rootnav.py --info modelname`. 
-* Models now include more detailed information on the trainer, and owners of the dataset used.
-* Models also include information on which networks were used for transfer learning, if used.
-* Training code now uses a simpler configuration file, we are continuing work on this.
+### 17th Feb 2020 - Improvements coming to training code
+* We are now working on some improvements to the training code, which had a few bits of python 2 and uneeded dependencies in etc. We'll also be doing a lot of code refactoring to make it easier to work with and edit for your needs. Once done we'll release this code, but in the meantime the most recent updates will be in the `training` branch.
 
 Full updates may be found in the [change log](CHANGELOG.md).
 
