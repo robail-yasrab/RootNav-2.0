@@ -1,18 +1,13 @@
 from __future__ import absolute_import
-import pandas as pd
 import numpy as np
 from PIL import Image
 import os
 import xml.etree.ElementTree
 from PIL import Image
 from glob import glob
-from skimage import io, transform
-from skimage import io, transform
 import matplotlib.pyplot as plt
 import cv2
 plt.ion()  # interactive mode
-import pandas as pd
-import pandas
 from PIL import Image
 from PIL import Image
 import torch
@@ -336,26 +331,26 @@ class rootsLoader(data.Dataset):
      
         ################## pri ###########################
         for r in plant.primary_roots():
-			for p in r.pairwise():
-				aa = r.end
-       			aa = np.multiply(aa, a)
-        		aa = aa.astype(int)
-        		aa = np.asarray(aa)
-        		cv2.line(gt[2], p[0], p[1], (255,255,255), line_thickness) 
-        		cv2.circle(gt[3], (r.end), 10, (255, 255, 255), -1)
-			hm[1] = draw_labelmap(hm[1], aa, sigma, type=label_type)
+            for p in r.pairwise():
+                aa = r.end
+                aa = np.multiply(aa, a)
+                aa = aa.astype(int)
+                aa = np.asarray(aa)
+                cv2.line(gt[2], p[0], p[1], (255,255,255), line_thickness) 
+                cv2.circle(gt[3], (r.end), 10, (255, 255, 255), -1)
+            hm[1] = draw_labelmap(hm[1], aa, sigma, type=label_type)
    
         ######################latral #######################
         ################## latral ###########################
         for r in plant.lateral_roots():
-			for p in r.pairwise():
-				aa = r.end
-       			aa = np.multiply(aa, a)
-        		aa = aa.astype(int)
-        		aa = np.asarray(aa) 
-		        cv2.line(gt[0], p[0], p[1], (255,255,255), line_thickness) 
-        		cv2.circle(gt[1], (r.end), 10, (255, 255, 255), -1)
-			hm[0] = draw_labelmap(hm[0], aa, sigma, type=label_type)
+            for p in r.pairwise():
+                aa = r.end
+                aa = np.multiply(aa, a)
+                aa = aa.astype(int)
+                aa = np.asarray(aa) 
+                cv2.line(gt[0], p[0], p[1], (255,255,255), line_thickness) 
+                cv2.circle(gt[1], (r.end), 10, (255, 255, 255), -1)
+            hm[0] = draw_labelmap(hm[0], aa, sigma, type=label_type)
        
         ######################latral #######################
 

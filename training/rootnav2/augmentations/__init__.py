@@ -1,6 +1,6 @@
 import logging
 from rootnav2.augmentations.augmentations import *
-print 'augmentations is on'
+print ('Augmentations are on')
 logger = logging.getLogger('rootnav2')
 
 key2aug = {'gamma': AdjustGamma,
