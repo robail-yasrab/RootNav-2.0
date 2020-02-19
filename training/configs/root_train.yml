@@ -1,7 +1,7 @@
 model:
-    arch: unet
+    arch: HG
 data:
-    dataset: HG
+    dataset: roots
     train_split: train
     val_split: val
     img_rows: 'same'
