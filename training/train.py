@@ -155,7 +155,6 @@ def train(cfg, logger, logdir):
 
             outputs1, output2= model(images)
             
-            #out1= outputs1[-1]
 
             optimizer.zero_grad()
             

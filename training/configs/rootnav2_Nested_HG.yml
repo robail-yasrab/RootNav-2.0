@@ -9,7 +9,7 @@ data:
     val_split: val
     img_rows: 'same'
     img_cols: 'same'
-    path: /db/pszry/deadpool/db3/Single/
+    path: /../  #path to dataset
 # set batch size and number of workers
 training:
     train_iters: 2500000
