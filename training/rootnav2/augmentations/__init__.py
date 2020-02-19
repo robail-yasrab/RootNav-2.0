@@ -4,12 +4,10 @@ print ('Augmentations are on')
 logger = logging.getLogger('rootnav2')
 
 key2aug = {
-           'rcrop': RandomCrop, #
            'hflip': RandomHorizontallyFlip, #
            'vflip': RandomVerticallyFlip, #
-           'rsize': RandomSized, #
            'rotate': RandomRotate, #
-           'ccrop': CenterCrop,} #
+           } #
 
 def get_composed_augmentations(aug_dict):
     if aug_dict is None:

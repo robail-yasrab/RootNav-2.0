@@ -3,15 +3,13 @@ import logging
 import functools
 
 from rootnav2.loss.loss import cross_entropy2d
-from rootnav2.loss.loss import bootstrapped_cross_entropy2d
-from rootnav2.loss.loss import multi_scale_cross_entropy2d
+
 
 
 logger = logging.getLogger('rootnav2')
 
 key2loss = {'cross_entropy': cross_entropy2d,
-            'bootstrapped_cross_entropy': bootstrapped_cross_entropy2d,
-            'multi_scale_cross_entropy': multi_scale_cross_entropy2d,}
+            }
 
 def get_loss_function(cfg):
     if cfg['training']['loss'] is None:
