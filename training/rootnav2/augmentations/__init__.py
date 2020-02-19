@@ -3,20 +3,13 @@ from rootnav2.augmentations.augmentations import *
 print ('Augmentations are on')
 logger = logging.getLogger('rootnav2')
 
-key2aug = {'gamma': AdjustGamma,
-           'hue': AdjustHue,
-           'brightness': AdjustBrightness,
-           'saturation': AdjustSaturation,
-           'contrast': AdjustContrast,
-           'rcrop': RandomCrop,
-           'hflip': RandomHorizontallyFlip,
-           'vflip': RandomVerticallyFlip,
-           'scale': Scale,
-           'rsize': RandomSized,
-           'rsizecrop': RandomSizedCrop,
-           'rotate': RandomRotate,
-           'translate': RandomTranslate,
-           'ccrop': CenterCrop,}
+key2aug = {
+           'rcrop': RandomCrop, #
+           'hflip': RandomHorizontallyFlip, #
+           'vflip': RandomVerticallyFlip, #
+           'rsize': RandomSized, #
+           'rotate': RandomRotate, #
+           'ccrop': CenterCrop,} #
 
 def get_composed_augmentations(aug_dict):
     if aug_dict is None:
