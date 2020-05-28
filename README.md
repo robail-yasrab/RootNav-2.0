@@ -59,7 +59,7 @@ Training code may be found in the training folder. Instructions on training mode
 
 
 ### Dataset Directory Format
-Please follow the below given directory formate for the training process. 
+Please follow the below given directory formate for the training process. For dataset preparation (RSML to Annotations), please refer to our [[RSML_to_Annotations](https://github.com/robail-yasrab/RSML-to-Image.git)] script. 
 ```
 - Roots
   -- train  (training dataset images)
