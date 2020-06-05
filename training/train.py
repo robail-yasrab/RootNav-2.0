@@ -4,7 +4,6 @@ import yaml
 import time
 import shutil
 import torch
-import visdom
 import random
 import argparse
 import datetime
@@ -13,9 +12,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
 import scipy.misc as misc
-from skimage import io, transform
 import numpy as np
-import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
 from torch.utils import data
@@ -29,7 +26,7 @@ from rootnav2.metrics import runningScore, averageMeter
 from rootnav2.augmentations import get_composed_augmentations
 from rootnav2.schedulers import get_scheduler
 from rootnav2.optimizers import get_optimizer
-from tensorboardX import SummaryWriter
+
 weights =[0.0021,0.1861,2.3898,0.6323,28.6333,31.0194]
 class_weights = torch.FloatTensor(weights).cuda()
 def show_example(img, gt_mask, pred_mask):
@@ -53,7 +50,7 @@ def show_example(img, gt_mask, pred_mask):
     plt.savefig('3pic', bbox_inches="tight", pad_inches=0)
 
     
-def train(cfg, writer, logger):
+def train(cfg, logger, logdir):
     
     # Setup seeds
     torch.manual_seed(cfg.get('seed', 1337))
@@ -72,7 +69,7 @@ def train(cfg, writer, logger):
     data_loader = get_loader(cfg['data']['dataset'])
     data_path = cfg['data']['path']
 
-    print "Dataset Loading from...", data_path
+    print ("Dataset Loading from...", data_path)
 
     t_loader = data_loader(
         data_path,
@@ -158,7 +155,6 @@ def train(cfg, writer, logger):
 
             outputs1, output2= model(images)
             
-            #out1= outputs1[-1]
 
             optimizer.zero_grad()
             
@@ -185,7 +181,7 @@ def train(cfg, writer, logger):
 
                 print(print_str)
                 logger.info(print_str)
-                writer.add_scalar('loss/train_loss', loss1.item(), i+1)
+                #writer.add_scalar('loss/train_loss', loss1.item(), i+1)
                 time_meter.reset()
 
             if (i + 1) % cfg['training']['val_interval'] == 0 or \
@@ -211,18 +207,18 @@ def train(cfg, writer, logger):
                         val_loss_meter.update(val_loss1.item())
 
 
-                writer.add_scalar('loss/val_loss', val_loss_meter.avg, i+1)
+                #writer.add_scalar('loss/val_loss', val_loss_meter.avg, i+1)
                 logger.info("Iter %d Loss: %.4f" % (i + 1, val_loss_meter.avg))
 
                 score, class_iou = running_metrics_val.get_scores()
                 for k, v in score.items():
                     print(k, v)
                     logger.info('{}: {}'.format(k, v))
-                    writer.add_scalar('val_metrics/{}'.format(k), v, i+1)
+                    #.add_scalar('val_metrics/{}'.format(k), v, i+1)
 
                 for k, v in class_iou.items():
                     logger.info('{}: {}'.format(k, v))
-                    writer.add_scalar('val_metrics/cls_{}'.format(k), v, i+1)
+                    #writer.add_scalar('val_metrics/cls_{}'.format(k), v, i+1)
 
                 val_loss_meter.reset()
                 running_metrics_val.reset()
@@ -270,12 +266,17 @@ if __name__ == "__main__":
 
     run_id = random.randint(1,100000)
     logdir = os.path.join('runs', os.path.basename(args.config)[:-4] , str(run_id))
-    writer = SummaryWriter(log_dir=logdir)
+
+
 
     print('RUNDIR: {}'.format(logdir))
+
+    if not os.path.exists(logdir):
+        os.makedirs(logdir)
+
     shutil.copy(args.config, logdir)
 
     logger = get_logger(logdir)
-    logger.info('Let the games begin')
+    logger.info('Starting training')
 
-    train(cfg, writer, logger)
+    train(cfg, logger, logdir)
