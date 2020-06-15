@@ -26,6 +26,8 @@ from rootnav2.metrics import runningScore, averageMeter
 from rootnav2.augmentations import get_composed_augmentations
 from rootnav2.schedulers import get_scheduler
 from rootnav2.optimizers import get_optimizer
+from tensorboardX import SummaryWriter
+
 
 weights =[0.0021,0.1861,2.3898,0.6323,28.6333,31.0194]
 class_weights = torch.FloatTensor(weights).cuda()
@@ -181,7 +183,7 @@ def train(cfg, logger, logdir):
 
                 print(print_str)
                 logger.info(print_str)
-                #writer.add_scalar('loss/train_loss', loss1.item(), i+1)
+                writer.add_scalar('loss/train_loss', loss1.item(), i+1)
                 time_meter.reset()
 
             if (i + 1) % cfg['training']['val_interval'] == 0 or \
@@ -207,7 +209,7 @@ def train(cfg, logger, logdir):
                         val_loss_meter.update(val_loss1.item())
 
 
-                #writer.add_scalar('loss/val_loss', val_loss_meter.avg, i+1)
+                writer.add_scalar('loss/val_loss', val_loss_meter.avg, i+1)
                 logger.info("Iter %d Loss: %.4f" % (i + 1, val_loss_meter.avg))
 
                 score, class_iou = running_metrics_val.get_scores()
@@ -218,7 +220,7 @@ def train(cfg, logger, logdir):
 
                 for k, v in class_iou.items():
                     logger.info('{}: {}'.format(k, v))
-                    #writer.add_scalar('val_metrics/cls_{}'.format(k), v, i+1)
+                    writer.add_scalar('val_metrics/cls_{}'.format(k), v, i+1)
 
                 val_loss_meter.reset()
                 running_metrics_val.reset()
@@ -266,6 +268,7 @@ if __name__ == "__main__":
 
     run_id = random.randint(1,100000)
     logdir = os.path.join('runs', os.path.basename(args.config)[:-4] , str(run_id))
+    writer = SummaryWriter(log_dir=logdir)
 
 
 

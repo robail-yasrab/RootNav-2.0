@@ -211,13 +211,13 @@ class rootsLoader(data.Dataset):
     def __getitem__(self, index):
         img_name = self.files[self.split][index]
         img_path = self.root + "/" + self.split + "/" + img_name
-        lbl_path = self.root + "/" + self.split + "annot6/" + img_name[:-4]+'.png'
+        lbl_path = self.root + "/" + self.split + "annot/" + img_name[:-4]+'.png'
         TRSML = self.root + "/" + self.split + "RSML/" + img_name[:-4]+'.rsml'
         plants = RSMLParser.parse(TRSML, round_points = True)
         plant = plants[0]
         img = Image.open(img_path)
         lbl = Image.open(lbl_path).convert('L')
-        line_thickness = 8
+        line_thickness = 4
         #################################################
 
         ################# heat-map ########################
@@ -292,9 +292,9 @@ class rootsLoader(data.Dataset):
         gt = torch.from_numpy(np.array(gt)).float()
         return img, lbl, hm, gt
     def decode_segmap(self, temp, plot=False):
-        Sky = [255, 255, 255]
-        Building = [0, 255, 0]
-        Pole = [255, 100, 100]
+        back = [255, 255, 255]
+        p_root = [0, 255, 0]
+        l_root = [255, 100, 100]
         seed = [255, 0, 0]
         tipp = [147, 0, 227]
         tipsec = [0, 0, 0]
@@ -302,9 +302,9 @@ class rootsLoader(data.Dataset):
 
         label_colours = np.array(
             [
-                Sky,
-                Building,
-                Pole,
+                back,
+                p_root,
+                l_root,
                 seed,
                 tipp,
                 tipsec,
