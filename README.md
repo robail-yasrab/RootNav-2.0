@@ -1,8 +1,8 @@
 # RootNav 2.0
 This is the RootNav 2.0 Code repository. This README and the repository code are being improved daily as we prepare for publication, please check back for new features and documentation soon!
 
-### 17th Feb 2020 - Improvements coming to training code
-* We are now working on some improvements to the training code, which had a few bits of python 2 and uneeded dependencies in etc. We'll also be doing a lot of code refactoring to make it easier to work with and edit for your needs. Once done we'll release this code, but in the meantime the most recent updates will be in the `training` branch.
+### 15th June 2020 - Improvements coming to training code
+* We are now working on some improvements to the training code, which had a few bits of python 2 and uneeded dependencies in etc. We'll also be doing a lot of code refactoring to make it easier to work with and edit for your needs. Once done we'll release this code, but in the meantime the most recent updates will be in the [training](https://github.com/robail-yasrab/RootNav-2.0/tree/training) branch.
 
 Full updates may be found in the [change log](CHANGELOG.md).
 
@@ -59,7 +59,8 @@ Training code may be found in the training folder. Instructions on training mode
 
 
 ### Dataset Directory Format
-Please follow the below given directory formate for the training process. 
+Please follow the below given directory formate for the training process. For dataset preparation (RSML to Annotations), please refer to our [RSML_to_Annotations](https://github.com/robail-yasrab/RSML-to-Image.git) script to generate Colored GT. To generate final GT, use Colorder GT and [Final GT](https://github.com/robail-yasrab/RGB_GT_Encoding) script. You can also calculate dataset classes weights using [weighted_loss](https://github.com/robail-yasrab/dataset_weights) script. 
+
 ```
 - Roots
   -- train  (training dataset images)
