@@ -59,7 +59,7 @@ Training code may be found in the training folder. Instructions on training mode
 
 
 ### Dataset Directory Format
-Please follow the below given directory formate for the training process. For dataset preparation (RSML to Annotations), please refer to our [RSML_to_Annotations](https://github.com/robail-yasrab/RSML-to-Image.git) script to generate Colored GT. To generate final GT, use Colorder GT and [Final GT](https://github.com/robail-yasrab/RGB_GT_Encoding) script.
+Please follow the below given directory formate for the training process. For dataset preparation (RSML to Annotations), please refer to our [RSML_to_Annotations](https://github.com/robail-yasrab/RSML-to-Image.git) script to generate Colored GT. To generate final GT, use Colorder GT and [Final GT](https://github.com/robail-yasrab/RGB_GT_Encoding) script. You can also calculate dataset classes weights using [Weighted_loss](https://github.com/robail-yasrab/dataset_weights) script. 
 
 ```
 - Roots
