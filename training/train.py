@@ -155,17 +155,27 @@ def train(cfg, logger, logdir):
             hm = hm.to(device)
             gt = gt.to(device)
 
-            outputs1, output2= model(images)
+            outputs= model(images)
+            out_main= outputs[-1]
             
 
             optimizer.zero_grad()
             
-            loss1 = loss(input=outputs1, target=labels)
+            loss1 = loss(input=out_main, target=labels)
+
+            out_gt= out_main[:,1:,:,:]
                        
-            loss2 = criterion(input=output2, target=hm)
+            loss2 = criterion(input=out_gt, target=gt)
+            out5= out_main[:,5:6,:,:]       #Lat tip    
+            out4= out_main[:,4:5,:,:]       # Pri tip
+            out2= out_main[:,2:3,:,:]       # Seed Location  
+
+            tips = torch.cat((out2, out4,  out5), 1)
+            loss3 = criterion(input=tips, target=hm)
 
             loss1.backward(retain_graph=True)
             loss2.backward(retain_graph=True)
+            loss3.backward()
      
 
             optimizer.step()
@@ -194,7 +204,8 @@ def train(cfg, logger, logdir):
                         images_val = images_val.to(device)
                         labels_val = labels_val.to(device)
                         gt = gt.to(device)
-                        outputs1, outputs2= model(images_val)
+                        outputs = model(images_val)
+                        outputs1= outputs[-1]
                         
 
                         val_loss1 = loss(input=outputs1, target=labels_val)
