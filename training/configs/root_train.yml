@@ -27,4 +27,5 @@ training:
         hflip: 0.6                                     #[flip horizontally with chance p]
 
     lr_schedule:
-    resume:                                              #./inference/models/wheat_bluepaper.pth (can use the trained model from inference section)
+    resume:                                              #./inference/models/wheat_bluepaper.pth
+                                                         # (can use the trained model from inference section)
