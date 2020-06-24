@@ -5,7 +5,7 @@ Use lr=0.01 for current version
 '''
 import torch.nn as nn
 import torch.nn.functional as F
-print 'Hourglass CNN'
+print ('Hourglass CNN')
 # from .preresnet import BasicBlock, Bottleneck
 
 
@@ -154,9 +154,6 @@ class HourglassNet(nn.Module):
 
 
 
-
-        print num_stacks
-        print num_blocks
         # build hourglass modules
         ch = self.num_feats*block.expansion
         hg, res, fc, score, fc_, score_ = [], [], [], [], [], []
