@@ -15,6 +15,7 @@ dependencies:
   - scipy=1.2.1
   - torchvision=0.2.2
   - yaml=0.1.7
+  - tensorboardx=2.0=py_0
   - pydensecrf==1.0rc3
   - pip:
     - cython==0.29.13
