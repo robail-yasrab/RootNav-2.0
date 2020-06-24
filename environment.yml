@@ -16,6 +16,7 @@ dependencies:
   - torchvision=0.2.2
   - yaml=0.1.7
   - pydensecrf==1.0rc3
+  - tensorboardx=2.0=py_0
   - pip:
     - cython==0.29.13
     - kdtree==0.16
