@@ -12,7 +12,7 @@ Full updates may be found in the [change log](CHANGELOG.md).
 ### Longer term features
 * Additional trained models. If you have datasets you'd like to see work with the tool and aren't covered by our examples, please get in touch and we can collaborate!
 
-## Installing RootNav 2.0
+## Installing RootNav 2.0 
 You will first need to download the code, either as a zip above, or by cloning the git repository (recommended):
 ```
 git clone https://github.com/robail-yasrab/RootNav-2.0.git
@@ -52,7 +52,7 @@ python rootnav.py --model wheat_bluepaper input_directory output_directory
 RootNav will read any images within specified input directory, and output images and RSML to the output directory.
 
 #### Analysing Root Systems
-RootNav 2.0 doesn't measure root systems itself, it outputs architectures to RSML files, which may be analysed using a suitable tool. We have adapted the original viewer to perform this function, which you can find on github [[RootNav Viewer](https://github.com/robail-yasrab/RootNav-Viewer-2.0)]. The benefit of separating the extraction of root systems and measurement is that additional measurements may be taken at a later date without requiring re-analysis of the original images. This makes analysing and re-analysing many root systems very straightforward. The viewer can also be extended using plugin code to capture new measurements if desired, however most common phenotypes are already built into the tool.
+RootNav 2.0 [[1]](#1) doesn't measure root systems itself, it outputs architectures to RSML files, which may be analysed using a suitable tool. We have adapted the original viewer to perform this function, which you can find on github [[RootNav Viewer](https://github.com/robail-yasrab/RootNav-Viewer-2.0)]. The benefit of separating the extraction of root systems and measurement is that additional measurements may be taken at a later date without requiring re-analysis of the original images. This makes analysing and re-analysing many root systems very straightforward. The viewer can also be extended using plugin code to capture new measurements if desired, however most common phenotypes are already built into the tool.
 
 ### Training
 Training code may be found in the training folder. Instructions on training models are given below. If you would like to collaborate on the development of new models for RootNav 2.0, please contact us.
@@ -132,3 +132,10 @@ python train.py [-h] [--config [CONFIG]]
 
 ## Contact
 Publication details will appear here in due course. For enquiries please contact [michael.pound@nottingham.ac.uk](mailto:michael.pound@nottingham.ac.uk).
+
+
+## References
+<a id="1">[1]</a> 
+Yasrab, R., Atkinson, J. A., Wells, D. M., French, A. P., Pridmore, T. P., & Pound, M. P. (2019), 
+RootNav 2.0: Deep learning for automatic navigation of complex plant root architectures, 
+GigaScience, 8(11), giz123.
