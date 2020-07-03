@@ -6,18 +6,18 @@ data:
     val_split: val
     img_rows: 'same'
     img_cols: 'same'
-    path: /.../ROOTS/ 
+    path: ./OSR_Root_dataset/ #edit your dataset path
 training:
     train_iters: 25000000
-    batch_size: 1
+    batch_size: 6   # (for two GPUs) chnage according to your GPU 
     val_interval: 500
-    n_workers: 1
+    n_workers: 6    # (for two GPUs) chnage according to your GPU
     print_interval: 100
     optimizer:
-        name: 'adam'
-        lr: 0.01
+        name: 'rmsprop'
+        lr: 0.01   
         weight_decay: 0.001
-        #momentum: 0.9
+        momentum: 0.9
     loss:
         name: 'cross_entropy'
         size_average: False
@@ -27,6 +27,5 @@ training:
         hflip: 0.6                                     #[flip horizontally with chance p]
 
     lr_schedule:
-    resume: 
-
-
+    resume:                                              #./inference/models/wheat_bluepaper.pth
+                                                         # (can use the trained model from inference section)

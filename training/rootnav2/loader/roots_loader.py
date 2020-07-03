@@ -211,59 +211,57 @@ class rootsLoader(data.Dataset):
     def __getitem__(self, index):
         img_name = self.files[self.split][index]
         img_path = self.root + "/" + self.split + "/" + img_name
-        lbl_path = self.root + "/" + self.split + "annot6/" + img_name[:-4]+'.png'
+        lbl_path = self.root + "/" + self.split + "annot/" + img_name[:-4]+'.png'
         TRSML = self.root + "/" + self.split + "RSML/" + img_name[:-4]+'.rsml'
         plants = RSMLParser.parse(TRSML, round_points = True)
         plant = plants[0]
         img = Image.open(img_path)
         lbl = Image.open(lbl_path).convert('L')
-        line_thickness = 8
-        #################################################
+        line_thickness = 4
+        for plant in plants:
+            ################# heat-map ########################
+            h, w = img.size 
+            new_h, new_w =  self.img_size1 
+            new_h, new_w = float(new_h), float(new_w)
+            h, w = float(h), float(w)
+            a = ((new_h / h), (new_w / w))      
+            new_h, new_w = int(new_h), int(new_w)
+            gt = np.zeros((5, new_h,new_w), dtype=np.uint8)
 
-        ################# heat-map ########################
-        h, w = img.size 
-        new_h, new_w =  self.img_size1 
-        new_h, new_w = float(new_h), float(new_w)
-        h, w = float(h), float(w)
-        a = ((new_h / h), (new_w / w))      
-        new_h, new_w = int(new_h), int(new_w)
-        gt = np.zeros((5, new_h,new_w), dtype=np.uint8)
-
-        #######################################################
-        hm = torch.zeros(3, new_h, new_w)       
-        ############### seed ###################     
-        aa = plant.seed
-        aa = np.multiply(aa, a)
-        aa = aa.astype(int)
-        aa = np.asarray(aa) 
-        cv2.circle(gt[4], (plant.seed), 10, (255, 255, 255), -1)
-        hm[2] = draw_labelmap(hm[2], aa, sigma, type=label_type)
-     
-        ################## pri ###########################
-        for r in plant.primary_roots():
-            for p in r.pairwise():
-                aa = r.end
-                aa = np.multiply(aa, a)
-                aa = aa.astype(int)
-                aa = np.asarray(aa)
-                cv2.line(gt[2], p[0], p[1], (255,255,255), line_thickness) 
-                cv2.circle(gt[3], (r.end), 10, (255, 255, 255), -1)
-            hm[1] = draw_labelmap(hm[1], aa, sigma, type=label_type)
-   
-        ######################latral #######################
-        ################## latral ###########################
-        for r in plant.lateral_roots():
-            for p in r.pairwise():
-                aa = r.end
-                aa = np.multiply(aa, a)
-                aa = aa.astype(int)
-                aa = np.asarray(aa) 
-                cv2.line(gt[0], p[0], p[1], (255,255,255), line_thickness) 
-                cv2.circle(gt[1], (r.end), 10, (255, 255, 255), -1)
-            hm[0] = draw_labelmap(hm[0], aa, sigma, type=label_type)
+            #######################################################
+            hm = torch.zeros(3, new_h, new_w)       
+            ############### seed ###################     
+            aa = plant.seed
+            aa = np.multiply(aa, a)
+            aa = aa.astype(int)
+            aa = np.asarray(aa) 
+            cv2.circle(gt[4], (plant.seed), 10, (255, 255, 255), -1)
+            hm[2] = draw_labelmap(hm[2], aa, sigma, type=label_type)
+         
+            ################## pri ###########################
+            for r in plant.primary_roots():
+                for p in r.pairwise():
+                    aa = r.end
+                    aa = np.multiply(aa, a)
+                    aa = aa.astype(int)
+                    aa = np.asarray(aa)
+                    cv2.line(gt[2], p[0], p[1], (255,255,255), line_thickness) 
+                    cv2.circle(gt[3], (r.end), 10, (255, 255, 255), -1)
+                hm[1] = draw_labelmap(hm[1], aa, sigma, type=label_type)
        
-        ######################latral #######################
-
+            ######################latral #######################
+            ################## latral ###########################
+            for r in plant.lateral_roots():
+                for p in r.pairwise():
+                    aa = r.end
+                    aa = np.multiply(aa, a)
+                    aa = aa.astype(int)
+                    aa = np.asarray(aa) 
+                    cv2.line(gt[0], p[0], p[1], (255,255,255), line_thickness) 
+                    cv2.circle(gt[1], (r.end), 10, (255, 255, 255), -1)
+                hm[0] = draw_labelmap(hm[0], aa, sigma, type=label_type)
+           
+        
         img = img.resize((self.img_size[0], self.img_size[1]))  # uint8 with RGB mode
         lbl = lbl.resize((self.img_size[0], self.img_size[1]))
 
@@ -292,9 +290,9 @@ class rootsLoader(data.Dataset):
         gt = torch.from_numpy(np.array(gt)).float()
         return img, lbl, hm, gt
     def decode_segmap(self, temp, plot=False):
-        Sky = [255, 255, 255]
-        Building = [0, 255, 0]
-        Pole = [255, 100, 100]
+        back = [255, 255, 255]
+        p_root = [0, 255, 0]
+        l_root = [255, 100, 100]
         seed = [255, 0, 0]
         tipp = [147, 0, 227]
         tipsec = [0, 0, 0]
@@ -302,9 +300,9 @@ class rootsLoader(data.Dataset):
 
         label_colours = np.array(
             [
-                Sky,
-                Building,
-                Pole,
+                back,
+                p_root,
+                l_root,
                 seed,
                 tipp,
                 tipsec,

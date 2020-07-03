@@ -26,6 +26,8 @@ from rootnav2.metrics import runningScore, averageMeter
 from rootnav2.augmentations import get_composed_augmentations
 from rootnav2.schedulers import get_scheduler
 from rootnav2.optimizers import get_optimizer
+from tensorboardX import SummaryWriter
+
 
 weights =[0.0021,0.1861,2.3898,0.6323,28.6333,31.0194]
 class_weights = torch.FloatTensor(weights).cuda()
@@ -153,17 +155,27 @@ def train(cfg, logger, logdir):
             hm = hm.to(device)
             gt = gt.to(device)
 
-            outputs1, output2= model(images)
+            outputs= model(images)
+            out_main= outputs[-1]
             
 
             optimizer.zero_grad()
             
-            loss1 = loss(input=outputs1, target=labels)
+            loss1 = loss(input=out_main, target=labels)
+
+            out_gt= out_main[:,1:,:,:]
                        
-            loss2 = criterion(input=output2, target=hm)
+            loss2 = criterion(input=out_gt, target=gt)
+            out5= out_main[:,5:6,:,:]       #Lat tip    
+            out4= out_main[:,4:5,:,:]       # Pri tip
+            out2= out_main[:,2:3,:,:]       # Seed Location  
+
+            tips = torch.cat((out2, out4,  out5), 1)
+            loss3 = criterion(input=tips, target=hm)
 
             loss1.backward(retain_graph=True)
             loss2.backward(retain_graph=True)
+            loss3.backward()
      
 
             optimizer.step()
@@ -181,7 +193,7 @@ def train(cfg, logger, logdir):
 
                 print(print_str)
                 logger.info(print_str)
-                #writer.add_scalar('loss/train_loss', loss1.item(), i+1)
+                writer.add_scalar('loss/train_loss', loss1.item(), i+1)
                 time_meter.reset()
 
             if (i + 1) % cfg['training']['val_interval'] == 0 or \
@@ -192,7 +204,8 @@ def train(cfg, logger, logdir):
                         images_val = images_val.to(device)
                         labels_val = labels_val.to(device)
                         gt = gt.to(device)
-                        outputs1, outputs2= model(images_val)
+                        outputs = model(images_val)
+                        outputs1= outputs[-1]
                         
 
                         val_loss1 = loss(input=outputs1, target=labels_val)
@@ -207,7 +220,7 @@ def train(cfg, logger, logdir):
                         val_loss_meter.update(val_loss1.item())
 
 
-                #writer.add_scalar('loss/val_loss', val_loss_meter.avg, i+1)
+                writer.add_scalar('loss/val_loss', val_loss_meter.avg, i+1)
                 logger.info("Iter %d Loss: %.4f" % (i + 1, val_loss_meter.avg))
 
                 score, class_iou = running_metrics_val.get_scores()
@@ -218,7 +231,7 @@ def train(cfg, logger, logdir):
 
                 for k, v in class_iou.items():
                     logger.info('{}: {}'.format(k, v))
-                    #writer.add_scalar('val_metrics/cls_{}'.format(k), v, i+1)
+                    writer.add_scalar('val_metrics/cls_{}'.format(k), v, i+1)
 
                 val_loss_meter.reset()
                 running_metrics_val.reset()
@@ -266,6 +279,7 @@ if __name__ == "__main__":
 
     run_id = random.randint(1,100000)
     logdir = os.path.join('runs', os.path.basename(args.config)[:-4] , str(run_id))
+    writer = SummaryWriter(log_dir=logdir)
 
 
 
