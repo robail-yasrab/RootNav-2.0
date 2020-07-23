@@ -1,8 +1,8 @@
 # RootNav 2.0
 This is the RootNav 2.0 Code repository. This README and the repository code are being improved daily as we prepare for publication, please check back for new features and documentation soon!
 
-### 15th June 2020 - Improvements coming to training code
-* We are now working on some improvements to the training code, which had a few bits of python 2 and uneeded dependencies in etc. We'll also be doing a lot of code refactoring to make it easier to work with and edit for your needs. Once done we'll release this code, but in the meantime the most recent updates will be in the [training](https://github.com/robail-yasrab/RootNav-2.0/tree/training) branch.
+### 23rd July 2020 - Improvements coming to training code within a week
+* In response to some feedback from collaborators, we are simplifying some aspects of the training code, including the data folder structures. This will take about a week, if you are looking to train RootNav 2 on your data, you might like to wait until this is complete. In the meantime, to train rootnav 2 you will need sets of images and RSML annotations for these. This can be produced by a number of tools, but we use [RootNav 1](https://sourceforge.net/projects/rootnav/) to do this.
 
 Full updates may be found in the [change log](CHANGELOG.md).
 
