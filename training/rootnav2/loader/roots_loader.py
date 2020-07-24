@@ -211,6 +211,9 @@ class rootsLoader(data.Dataset):
     def __getitem__(self, index):
         img_name = self.files[self.split][index]
         img_path = self.root + "/" + self.split + "/" + img_name
+        
+        # TODO:
+        # lbl_path currentrly uses 6 classes, should be 3. BG, PRI, LAT
         lbl_path = self.root + "/" + self.split + "annot/" + img_name[:-4]+'.png'
         TRSML = self.root + "/" + self.split + "RSML/" + img_name[:-4]+'.rsml'
         plants = RSMLParser.parse(TRSML, round_points = True)
@@ -235,8 +238,8 @@ class rootsLoader(data.Dataset):
             aa = np.multiply(aa, a)
             aa = aa.astype(int)
             aa = np.asarray(aa) 
-            cv2.circle(gt[4], (plant.seed), 10, (255, 255, 255), -1)
-            hm[2] = draw_labelmap(hm[2], aa, sigma, type=label_type)
+            #cv2.circle(gt[4], (plant.seed), 10, (255, 255, 255), -1)
+            hm[0] = draw_labelmap(hm[1], aa, sigma, type=label_type)
          
             ################## pri ###########################
             for r in plant.primary_roots():
@@ -245,8 +248,8 @@ class rootsLoader(data.Dataset):
                     aa = np.multiply(aa, a)
                     aa = aa.astype(int)
                     aa = np.asarray(aa)
-                    cv2.line(gt[2], p[0], p[1], (255,255,255), line_thickness) 
-                    cv2.circle(gt[3], (r.end), 10, (255, 255, 255), -1)
+                    #cv2.line(gt[2], p[0], p[1], (255,255,255), line_thickness) 
+                    #cv2.circle(gt[3], (r.end), 10, (255, 255, 255), -1)
                 hm[1] = draw_labelmap(hm[1], aa, sigma, type=label_type)
        
             ######################latral #######################
@@ -259,7 +262,7 @@ class rootsLoader(data.Dataset):
                     aa = np.asarray(aa) 
                     cv2.line(gt[0], p[0], p[1], (255,255,255), line_thickness) 
                     cv2.circle(gt[1], (r.end), 10, (255, 255, 255), -1)
-                hm[0] = draw_labelmap(hm[0], aa, sigma, type=label_type)
+                hm[2] = draw_labelmap(hm[2], aa, sigma, type=label_type)
            
         
         img = img.resize((self.img_size[0], self.img_size[1]))  # uint8 with RGB mode
