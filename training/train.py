@@ -17,7 +17,7 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
 from torch.utils import data
 from tqdm import tqdm
-from rootnav2.hourglass import hg
+from rootnav2.n_hourglass import hg
 import cv2
 from rootnav2.loss import get_loss_function
 from rootnav2.loader import get_loader 
@@ -26,11 +26,10 @@ from rootnav2.metrics import runningScore, averageMeter
 from rootnav2.augmentations import get_composed_augmentations
 from rootnav2.schedulers import get_scheduler
 from rootnav2.optimizers import get_optimizer
-from tensorboardX import SummaryWriter
 
 
-weights =[0.0021,0.1861,2.3898,0.6323,28.6333,31.0194]
-class_weights = torch.FloatTensor(weights).cuda()
+weights =[0.33,0.33,0.33] # TESTING WEIGHTS
+
 def show_example(img, gt_mask, pred_mask):
     img_np = img.cpu().data.numpy()
 
@@ -54,14 +53,19 @@ def show_example(img, gt_mask, pred_mask):
     
 def train(cfg, logger, logdir):
     
+    # Setup device
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
+    # Class weights
+    class_weights = torch.FloatTensor(weights).to(device)
+
     # Setup seeds
     torch.manual_seed(cfg.get('seed', 1337))
     torch.cuda.manual_seed(cfg.get('seed', 1337))
     np.random.seed(cfg.get('seed', 1337))
     random.seed(cfg.get('seed', 1337))
 
-    # Setup device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
 
     # Setup Augmentations
     augmentations = cfg['training'].get('augmentations', None)
@@ -103,7 +107,7 @@ def train(cfg, logger, logdir):
     model =  hg()
 
     model = torch.nn.DataParallel(model, device_ids=range(torch.cuda.device_count()))
-    model.cuda()
+    model.to(device)
     # Setup optimizer, lr_scheduler and loss function
     optimizer_cls = get_optimizer(cfg)
     optimizer_params = {k:v for k, v in cfg['training']['optimizer'].items() 
@@ -142,47 +146,48 @@ def train(cfg, logger, logdir):
     best_iou = -100.0
     i = start_iter
     flag = True
-    loss = torch.nn.CrossEntropyLoss(weight=class_weights)
-    criterion = torch.nn.MSELoss(size_average=True).cuda()
+    bce_criterion = torch.nn.CrossEntropyLoss(weight=class_weights).to(device)
+    mse_criterion = torch.nn.MSELoss(size_average=True).to(device)
+
     while i <= cfg['training']['train_iters'] and flag:
         for (images, labels, hm, gt) in trainloader:
+
+            # LIST OF loader OUTPUTS
+            # seg = outputs[0] : Batch x 3 x 512 x 512
+            # reg = outputs[1] : Batch x 3 x 512 x 512
+            #
+            # labels from loader : Batch x 1 x 512 x 512
+            # 0 = BG, 1 = PRI, 2 = LAT
+            #
+            # hm from loader: Batch x 3 x 512 x 512
+
+
             i += 1
             start_ts = time.time()
             scheduler.step()
             model.train()
             images = images.to(device)
-            labels = labels.to(device)
-            hm = hm.to(device)
-            gt = gt.to(device)
+            labels = labels.to(device) # THIS NEEDS TO OUTPUT {0,1,2} not {0,1,2,3,4,5}
+            labels = torch.clamp(labels,0,2)
 
+            hm = hm.to(device)
+            print (hm.shape)
+            exit()
+            print("Model step")
             outputs= model(images)
-            out_main= outputs[-1]
-            
 
             optimizer.zero_grad()
-            
-            loss1 = loss(input=out_main, target=labels)
 
-            out_gt= out_main[:,1:,:,:]
-                       
-            loss2 = criterion(input=out_gt, target=gt)
-            out5= out_main[:,5:6,:,:]       #Lat tip    
-            out4= out_main[:,4:5,:,:]       # Pri tip
-            out2= out_main[:,2:3,:,:]       # Seed Location  
-
-            tips = torch.cat((out2, out4,  out5), 1)
-            loss3 = criterion(input=tips, target=hm)
-
-            loss1.backward(retain_graph=True)
-            loss2.backward(retain_graph=True)
-            loss3.backward()
-     
+            # Apply BCE loss to SEG
+            # Apply MSE loss to REG    
+            loss1 = bce_criterion(input = outputs[0], target = labels)
+            loss2 = mse_criterion(input=outputs[1], target=hm)
+            final_loss = loss1 + loss2
+            final_loss.backward()
 
             optimizer.step()
- 
 
             time_meter.update(time.time() - start_ts)
-
 
             if (i + 1) % cfg['training']['print_interval'] == 0:
                 fmt_str = "Iter [{:d}/{:d}]  Loss: {:.4f}  Time/Image: {:.4f}"
@@ -193,7 +198,7 @@ def train(cfg, logger, logdir):
 
                 print(print_str)
                 logger.info(print_str)
-                writer.add_scalar('loss/train_loss', loss1.item(), i+1)
+                #writer.add_scalar('loss/train_loss', loss1.item(), i+1)
                 time_meter.reset()
 
             if (i + 1) % cfg['training']['val_interval'] == 0 or \
@@ -203,24 +208,21 @@ def train(cfg, logger, logdir):
                     for i_val, (images_val, labels_val, hm, gt) in tqdm(enumerate(valloader)):
                         images_val = images_val.to(device)
                         labels_val = labels_val.to(device)
-                        gt = gt.to(device)
                         outputs = model(images_val)
-                        outputs1= outputs[-1]
-                        
 
-                        val_loss1 = loss(input=outputs1, target=labels_val)
-                        
+                        loss1 = bce_criterion(input = outputs[0], target = labels)
+                        loss2 = mse_criterion(input=outputs[1], target=hm)
 
-                        pred = outputs1.data.max(1)[1].cpu().numpy()
-                        pred1 = np.squeeze(outputs1[0:1,:,:,:].data.max(1)[1].cpu().numpy(), axis=0)
-                        gt = labels_val.data.cpu().numpy()
+                        #pred = outputs1.data.max(1)[1].cpu().numpy()
+                        #pred1 = np.squeeze(outputs1[0:1,:,:,:].data.max(1)[1].cpu().numpy(), axis=0)
 
 
-                        running_metrics_val.update(gt, pred)
-                        val_loss_meter.update(val_loss1.item())
+                        #running_metrics_val.update(gt, pred)
+                        val_loss_meter.update(loss1.item())
+                        # Might be worth reporting loss2 here (MSE for tips)
 
 
-                writer.add_scalar('loss/val_loss', val_loss_meter.avg, i+1)
+                #writer.add_scalar('loss/val_loss', val_loss_meter.avg, i+1)
                 logger.info("Iter %d Loss: %.4f" % (i + 1, val_loss_meter.avg))
 
                 score, class_iou = running_metrics_val.get_scores()
@@ -251,11 +253,11 @@ def train(cfg, logger, logdir):
                         "scheduler_state": scheduler.state_dict(),
                         "best_iou": best_iou,
                     }
-                    save_path = os.path.join(writer.file_writer.get_logdir(),
-                                             "{}_{}_best_model.pkl".format(
-                                                 cfg['model']['arch'],
-                                                 cfg['data']['dataset']))
-                    torch.save(state, save_path)
+                    #save_path = os.path.join(writer.file_writer.get_logdir(),
+                    #                         "{}_{}_best_model.pkl".format(
+                    #                             cfg['model']['arch'],
+                    #                             cfg['data']['dataset']))
+                    #torch.save(state, save_path)
 
             if (i + 1) == cfg['training']['train_iters']:
                 flag = False
@@ -279,7 +281,7 @@ if __name__ == "__main__":
 
     run_id = random.randint(1,100000)
     logdir = os.path.join('runs', os.path.basename(args.config)[:-4] , str(run_id))
-    writer = SummaryWriter(log_dir=logdir)
+    #writer = SummaryWriter(log_dir=logdir)
 
 
 

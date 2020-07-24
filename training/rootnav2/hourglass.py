@@ -5,7 +5,7 @@ Use lr=0.01 for current version
 '''
 import torch.nn as nn
 import torch.nn.functional as F
-print ('Hourglass CNN')
+
 # from .preresnet import BasicBlock, Bottleneck
 
 
@@ -199,20 +199,17 @@ class HourglassNet(nn.Module):
 
     def forward(self, x):
         out = []
+
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x) 
 
         x = self.layer1(x)  
         x = self.maxpool(x)
-        x = self.layer2(x)  
+        x = self.layer2(x) 
         x = self.layer3(x)  
-
         x= self.tail_deconv2(x)
         x = self.tail_bn2(x)
-
-
- 
 
         for i in range(self.num_stacks):
             y = self.hg[i](x)
@@ -224,7 +221,7 @@ class HourglassNet(nn.Module):
                 fc_ = self.fc_[i](y)
                 score_ = self.score_[i](score)
                 x = x + fc_ + score_
-
+                
         return out
 
 
