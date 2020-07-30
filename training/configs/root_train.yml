@@ -2,10 +2,6 @@ model:
     arch: HG
 data:
     dataset: roots
-    train_split: train
-    val_split: val
-    img_rows: 'same'
-    img_cols: 'same'
     path: ./OSR_Root_dataset/ #edit your dataset path
 training:
     train_iters: 25000000
@@ -23,8 +19,7 @@ training:
         size_average: False
     # Augmentations Configuration
     augmentations:
-        #rotate: 10                                    #[rotate -d to d degrees]
-        hflip: 0.6                                     #[flip horizontally with chance p]
+        hflip: 0.5
 
     lr_schedule:
     resume:                                              #./inference/models/wheat_bluepaper.pth
