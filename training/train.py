@@ -23,34 +23,14 @@ from rootnav2.loss import get_loss_function
 from rootnav2.loader import get_loader 
 from rootnav2.utils import get_logger
 from rootnav2.metrics import runningScore, averageMeter
-from rootnav2.augmentations import get_composed_augmentations
 from rootnav2.schedulers import get_scheduler
 from rootnav2.optimizers import get_optimizer
 
+# Class weights
+weights = [0.33,0.33,0.33] # TESTING WEIGHTS
+bce_weight = 1
+mse_weight = 1
 
-weights =[0.33,0.33,0.33] # TESTING WEIGHTS
-
-def show_example(img, gt_mask, pred_mask):
-    img_np = img.cpu().data.numpy()
-
-    img_np = np.transpose(img_np, [1,2,0])
-    img_np = cv2.resize(img_np, (512,512))
-
-
-    gt_mask_np = np.transpose(gt_mask, [1,2,0]) * 255.0   
-    gt_mask_np = np.repeat(gt_mask_np, 3, 2)
-    gt_mask_np = cv2.resize(gt_mask_np, (512,512))
-    pred_mask = np.asarray(pred_mask) #.cpu().numpy()
-
-    pred_mask = cv2.resize(pred_mask, (512,512))
-
-    img = np.concatenate((img_np, gt_mask_np, pred_mask), axis=1)
-    plt.imshow(img, cmap = 'gray', interpolation = 'bicubic')
-    plt.xticks([]), plt.yticks([])  # to hide tick values on X and Y axis
-    plt.show()
-    plt.savefig('3pic', bbox_inches="tight", pad_inches=0)
-
-    
 def train(cfg, logger, logdir):
     
     # Setup device
@@ -65,11 +45,12 @@ def train(cfg, logger, logdir):
     np.random.seed(cfg.get('seed', 1337))
     random.seed(cfg.get('seed', 1337))
 
-    
-
-    # Setup Augmentations
-    augmentations = cfg['training'].get('augmentations', None)
-    data_aug = get_composed_augmentations(augmentations)
+    # Is hflip in use?
+    augmentations = cfg['training'].get('augmentations', 0.0)
+    if augmentations is not None:
+        hflip = augmentations.get('hflip', 0.0)
+    else:
+        hflip = 0.0
 
     # Setup Dataloader
     data_loader = get_loader(cfg['data']['dataset'])
@@ -79,21 +60,17 @@ def train(cfg, logger, logdir):
 
     t_loader = data_loader(
         data_path,
-        is_transform=True,
-        split=cfg['data']['train_split'],
-        img_size=(cfg['data']['img_rows'], cfg['data']['img_cols']),
-        augmentations=data_aug)
+        split='train',
+        hflip=hflip)
 
     v_loader = data_loader(
         data_path,
-        is_transform=True,
-        split=cfg['data']['val_split'],
-        img_size=(cfg['data']['img_rows'], cfg['data']['img_cols']),)
+        split='valid')
 
     n_classes = t_loader.n_classes
     trainloader = data.DataLoader(t_loader,
                                   batch_size=cfg['training']['batch_size'], 
-                                  num_workers=cfg['training']['n_workers'], 
+                                  num_workers=1,#cfg['training']['n_workers'], 
                                   shuffle=True)
 
     valloader = data.DataLoader(v_loader, 
@@ -150,30 +127,26 @@ def train(cfg, logger, logdir):
     mse_criterion = torch.nn.MSELoss(size_average=True).to(device)
 
     while i <= cfg['training']['train_iters'] and flag:
-        for (images, labels, hm, gt) in trainloader:
+        for (images, labels, hm) in trainloader:
 
-            # LIST OF loader OUTPUTS
+            # LIST OF network OUTPUTS
             # seg = outputs[0] : Batch x 3 x 512 x 512
             # reg = outputs[1] : Batch x 3 x 512 x 512
             #
+            # LIST OF Loader OUTPUTS
             # labels from loader : Batch x 1 x 512 x 512
             # 0 = BG, 1 = PRI, 2 = LAT
             #
             # hm from loader: Batch x 3 x 512 x 512
-
-
             i += 1
             start_ts = time.time()
             scheduler.step()
             model.train()
             images = images.to(device)
-            labels = labels.to(device) # THIS NEEDS TO OUTPUT {0,1,2} not {0,1,2,3,4,5}
-            labels = torch.clamp(labels,0,2)
+            labels = labels.to(device)
 
             hm = hm.to(device)
-            print (hm.shape)
-            exit()
-            print("Model step")
+            print ("Model step")
             outputs= model(images)
 
             optimizer.zero_grad()
@@ -181,8 +154,8 @@ def train(cfg, logger, logdir):
             # Apply BCE loss to SEG
             # Apply MSE loss to REG    
             loss1 = bce_criterion(input = outputs[0], target = labels)
-            loss2 = mse_criterion(input=outputs[1], target=hm)
-            final_loss = loss1 + loss2
+            loss2 = mse_criterion(input = outputs[1], target= hm)
+            final_loss = bce_weight * loss1 + mse_weight * loss2
             final_loss.backward()
 
             optimizer.step()
@@ -205,13 +178,16 @@ def train(cfg, logger, logdir):
                (i + 1) == cfg['training']['train_iters']:
                 model.eval()
                 with torch.no_grad():
-                    for i_val, (images_val, labels_val, hm, gt) in tqdm(enumerate(valloader)):
+                    for i_val, (images_val, labels_val, hm) in tqdm(enumerate(valloader)):
                         images_val = images_val.to(device)
                         labels_val = labels_val.to(device)
                         outputs = model(images_val)
 
                         loss1 = bce_criterion(input = outputs[0], target = labels)
                         loss2 = mse_criterion(input=outputs[1], target=hm)
+
+                        # TODO
+                        # This area of code will need some adjustment.
 
                         #pred = outputs1.data.max(1)[1].cpu().numpy()
                         #pred1 = np.squeeze(outputs1[0:1,:,:,:].data.max(1)[1].cpu().numpy(), axis=0)
