@@ -1,16 +1,13 @@
 # RootNav 2.0
 This is the RootNav 2.0 Code repository. This README and the repository code are being improved daily as we prepare for publication, please check back for new features and documentation soon!
 
-### 23rd July 2020 - Improvements coming to training code within a week
-* In response to some feedback from collaborators, we are simplifying some aspects of the training code, including the data folder structures. This will take about a week, if you are looking to train RootNav 2 on your data, you might like to wait until this is complete. In the meantime, to train rootnav 2 you will need sets of images and RSML annotations for these. This can be produced by a number of tools, but we use [RootNav 1](https://sourceforge.net/projects/rootnav/) to do this.
+### v2.0
+The first release version of Rootnav 2 is tagged and can be found on the [releases page](https://github.com/robail-yasrab/RootNav-2.0/releases). Version 2.0 represents a polished version of the code used in the production of the original RootNav 2 paper. We are continuing to improve RootNav 2, and will shortly release a new version with improved training code. Future versions will not necessarily be compatible with the original models in order for us to work in new improvements, but where we update models the original version will continue to be available.
+
+### 5th August 2020 - Improvements coming to training code will be published soon, but can now be found in the training branch
+As mentioned above we are simplifying some aspects of the training code, including the data folder structures. Work on this is progressing well, if you are looking to train RootNav 2 this code will shortly be available, but you will find the current version in the [training branch](https://github.com/robail-yasrab/RootNav-2.0/tree/training).
 
 Full updates may be found in the [change log](CHANGELOG.md).
-
-### Upcoming Features
-* Extended documentation to make clear how the tool is used
-
-### Longer term features
-* Additional trained models. If you have datasets you'd like to see work with the tool and aren't covered by our examples, please get in touch and we can collaborate!
 
 ## Installing RootNav 2.0 
 You will first need to download the code, either as a zip above, or by cloning the git repository (recommended):
