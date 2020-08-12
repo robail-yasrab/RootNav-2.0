@@ -25,14 +25,34 @@ from rootnav2.utils import get_logger
 from rootnav2.metrics import runningScore, averageMeter
 from rootnav2.schedulers import get_scheduler
 from rootnav2.optimizers import get_optimizer
+from pathlib import Path
+from publish import publish
 
 # Class weights
 weights = [0.33,0.33,0.33] # TESTING WEIGHTS
 bce_weight = 1
 mse_weight = 1
 
-def train(cfg, logger, logdir):
-    
+def train(args):
+    # Load Config
+    with open(args.config) as fp:
+        cfg = yaml.load(fp)
+
+    # Create log and output directory
+    run_id = random.randint(1,100000)
+    logdir = os.path.join('runs', os.path.basename(args.config)[:-4] , str(run_id))
+    #writer = SummaryWriter(log_dir=logdir)
+
+    print('RUNDIR: {}'.format(logdir))
+
+    if not os.path.exists(logdir):
+        os.makedirs(logdir)
+
+    shutil.copy(args.config, logdir)
+
+    logger = get_logger(logdir)
+    logger.info('Starting training')
+
     # Setup device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
@@ -145,8 +165,8 @@ def train(cfg, logger, logdir):
             images = images.to(device)
             labels = labels.to(device)
 
+
             hm = hm.to(device)
-            print ("Model step")
             outputs= model(images)
 
             optimizer.zero_grad()
@@ -154,7 +174,7 @@ def train(cfg, logger, logdir):
             # Apply BCE loss to SEG
             # Apply MSE loss to REG    
             loss1 = bce_criterion(input = outputs[0], target = labels)
-            loss2 = mse_criterion(input = outputs[1], target= hm)
+            loss2 = mse_criterion(input = outputs[1] * 10, target= hm * 10)
             final_loss = bce_weight * loss1 + mse_weight * loss2
             final_loss.backward()
 
@@ -239,36 +259,23 @@ def train(cfg, logger, logdir):
                 flag = False
                 break
 
-
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="config")
-    parser.add_argument(
-        "--config",
-        nargs="?",
-        type=str,
-        default="configs/rootnav2.yml",
-        help="Configuration file to use"
-    )
+    parser = argparse.ArgumentParser(description="RootNav 2 Training")
+    subparsers = parser.add_subparsers(title="Mode")
+
+    # Train sub command
+    parser_train = subparsers.add_parser('train', help='Train new models')
+    parser_train.add_argument("--config", nargs="?", type=str, default="configs/rootnav2.yml", help="Configuration file to use")
+    parser_train.set_defaults(func=train)
+
+    # Publish sub command
+    parser_publish = subparsers.add_parser('publish', help='Publish already trained models')
+    parser_publish.add_argument('--name', default="published_model", metavar='N', help="The name of the new published model")
+    parser_publish.add_argument('--parent', default=None, metavar='P', help="The name of the parent model used to begin training")
+    parser_publish.add_argument('--model', metavar='M', help="The trained weights file to publish")
+    parser_publish.add_argument('--multi-plant', action='store_true', help="Whether or not images are expected to contain multiple plants")
+    parser_publish.add_argument('output_dir', default='./', type=str, help='Output directory')
+    parser_publish.set_defaults(func=publish)
 
     args = parser.parse_args()
-
-    with open(args.config) as fp:
-        cfg = yaml.load(fp)
-
-    run_id = random.randint(1,100000)
-    logdir = os.path.join('runs', os.path.basename(args.config)[:-4] , str(run_id))
-    #writer = SummaryWriter(log_dir=logdir)
-
-
-
-    print('RUNDIR: {}'.format(logdir))
-
-    if not os.path.exists(logdir):
-        os.makedirs(logdir)
-
-    shutil.copy(args.config, logdir)
-
-    logger = get_logger(logdir)
-    logger.info('Starting training')
-
-    train(cfg, logger, logdir)
+    args.func(args)
