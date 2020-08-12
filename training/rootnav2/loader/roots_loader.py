@@ -157,7 +157,7 @@ class rootsLoader(data.Dataset):
     def _create_cache_file(self, image_path, rsml_path, cache_path):
         source_image = Image.open(image_path)
         source_width, source_height = source_image.size
-        
+
         # Read RSML file
         # Note: Points are parsed from RSML as x,y not y,x
         plants = RSMLParser.parse(rsml_path, round_points = False)
@@ -165,6 +165,13 @@ class rootsLoader(data.Dataset):
         seeds = []
         primary_tips = []
         lateral_tips = []
+
+        # Round tuple points
+        def int_t(t):
+            return (int(t[0]), int(t[1]))
+
+        # Create mask image
+        mask = np.zeros((source_height,source_width), dtype=np.uint8)
 
         # Regression points
         for plant in plants:
@@ -175,26 +182,33 @@ class rootsLoader(data.Dataset):
             for r in plant.lateral_roots():
                 lateral_tips.append(r.end)
 
+            # DRAW SEED ON MASK
+            cv2.circle(mask, int_t((plant.seed)), 10, (5), -1)
+
         # Segmentation masks
         line_thickness = 4
 
-        # Create mask image
-        mask = np.zeros((source_height,source_width), dtype=np.uint8)
+        # 0 BG
+        # 1 Lat seg
+        # 2 Lat tip
+        # 3 Pri seg
+        # 4 Pri tip
+        # 5 Seed location
 
-        # Round tuple points
-        def int_t(t):
-            return (int(t[0]), int(t[1]))
-        
         for plant in plants:
         # Draw lateral roots (ID 2)
             for r in plant.lateral_roots():
                 for p in r.pairwise():
-                    cv2.line(mask, int_t(p[0]), int_t(p[1]), (2), line_thickness)
+                    cv2.line(mask, int_t(p[0]), int_t(p[1]), (1), line_thickness)
+                # DRAW CIRCLE FOR LATERAL TIP
+                cv2.circle(mask, (int_t(r.end)), 10, (2), -1)
 
             # Draw primary roots (ID 1)
             for r in plant.primary_roots():
                 for p in r.pairwise():
-                    cv2.line(mask, int_t(p[0]), int_t(p[1]), (1), line_thickness)
+                    cv2.line(mask, int_t(p[0]), int_t(p[1]), (3), line_thickness)
+                # DRAW CIRCLE FOR PRI TIP
+                cv2.circle(mask, (int_t(r.end)), 10, (4), -1)
 
         annotation = {
             "seeds": torch.Tensor(seeds),

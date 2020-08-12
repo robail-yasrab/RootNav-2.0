@@ -17,7 +17,7 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
 from torch.utils import data
 from tqdm import tqdm
-from rootnav2.n_hourglass import hg
+from rootnav2.hourglass import hg
 import cv2
 from rootnav2.loss import get_loss_function
 from rootnav2.loader import get_loader 
@@ -29,9 +29,7 @@ from pathlib import Path
 from publish import publish
 
 # Class weights
-weights = [0.33,0.33,0.33] # TESTING WEIGHTS
-bce_weight = 1
-mse_weight = 1
+weights = [0.0021,0.1861,2.3898,0.6323,28.6333,31.0194]
 
 def train(args):
     # Load Config
@@ -164,19 +162,25 @@ def train(args):
             model.train()
             images = images.to(device)
             labels = labels.to(device)
-
-
             hm = hm.to(device)
+
             outputs= model(images)
-
+            out_main= outputs[-1]
+            sys.stdout.flush()
+            
             optimizer.zero_grad()
+            
+            loss1 = bce_criterion(input=out_main, target=labels)
 
-            # Apply BCE loss to SEG
-            # Apply MSE loss to REG    
-            loss1 = bce_criterion(input = outputs[0], target = labels)
-            loss2 = mse_criterion(input = outputs[1] * 10, target= hm * 10)
-            final_loss = bce_weight * loss1 + mse_weight * loss2
-            final_loss.backward()
+            out5= out_main[:,5:6,:,:] 
+            out4= out_main[:,4:5,:,:]
+            out2= out_main[:,2:3,:,:] 
+
+            tips = torch.cat((out2, out4,  out5), 1)
+            loss2 = mse_criterion(input=tips, target=hm)
+
+            loss1.backward(retain_graph=True)
+            loss2.backward()
 
             optimizer.step()
 
@@ -201,21 +205,18 @@ def train(args):
                     for i_val, (images_val, labels_val, hm) in tqdm(enumerate(valloader)):
                         images_val = images_val.to(device)
                         labels_val = labels_val.to(device)
+                        
                         outputs = model(images_val)
+                        outputs1= outputs[-1]
+                        
+                        val_loss1 = bce_criterion(input=outputs1, target=labels_val)
+                        
+                        pred = outputs1.data.max(1)[1].cpu().numpy()
+                        pred1 = np.squeeze(outputs1[0:1,:,:,:].data.max(1)[1].cpu().numpy(), axis=0)
+                        gt = labels_val.data.cpu().numpy()
 
-                        loss1 = bce_criterion(input = outputs[0], target = labels)
-                        loss2 = mse_criterion(input=outputs[1], target=hm)
-
-                        # TODO
-                        # This area of code will need some adjustment.
-
-                        #pred = outputs1.data.max(1)[1].cpu().numpy()
-                        #pred1 = np.squeeze(outputs1[0:1,:,:,:].data.max(1)[1].cpu().numpy(), axis=0)
-
-
-                        #running_metrics_val.update(gt, pred)
-                        val_loss_meter.update(loss1.item())
-                        # Might be worth reporting loss2 here (MSE for tips)
+                        running_metrics_val.update(gt, pred)
+                        val_loss_meter.update(val_loss1.item())
 
 
                 #writer.add_scalar('loss/val_loss', val_loss_meter.avg, i+1)
