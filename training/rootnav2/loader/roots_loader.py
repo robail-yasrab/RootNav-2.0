@@ -221,8 +221,10 @@ class rootsLoader(data.Dataset):
 
         hm = torch.zeros(3, self.network_output_size[0], self.network_output_size[1]) 
         render_heatmap_2d(hm[0], cache["seeds"].mul(scale), sigma)
-        render_heatmap_2d(hm[1], cache["primary"].mul(scale), sigma)
-        render_heatmap_2d(hm[2], cache["lateral"].mul(scale), sigma)
+        if (cache["primary"].size(0) > 0):
+            render_heatmap_2d(hm[1], cache["primary"].mul(scale), sigma)
+        if (cache["lateral"].size(0) > 0):
+            render_heatmap_2d(hm[2], cache["lateral"].mul(scale), sigma)
 
 
 
@@ -237,9 +239,7 @@ class rootsLoader(data.Dataset):
         mask = interpolate(mask.unsqueeze(0).float(), (self.network_input_size[0], self.network_input_size[1]), mode='nearest')[0]
         
         # Augmentation - hflip
-        print ("PREFLIP")
         if self.hflip > 0.0 and random.random() < self.hflip:
-            print ("FLIPPED")
             image = image.transpose(Image.FLIP_LEFT_RIGHT)
             mask = mask.flip(2)
             hm = hm.flip(2)
