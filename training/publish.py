@@ -45,14 +45,41 @@ def find_model(path, name):
                     return model_json
         return None
 
-def create_blank_model():
+def default_config():
+	return {
+        "multi-plant": False,
+        "network": {
+            "architecture": "hg",
+            "weights": "",
+            "url":"",
+            "scale": 0.00392156862745098,
+            "input-size": 1024,
+            "output-size": 512,
+            "channel-bindings": {
+                "segmentation": { "Background": 0, "Primary": 1, "Lateral": 2 },
+                "heatmap": { "Seed": 3, "Primary": 4, "Lateral": 5 }
+            }
+        },
+        "pathing": {
+            "rtree-threshold": 36,
+            "nms-threshold": 0.7,
+            "max-primary-distance": 400,
+            "max-lateral-distance": 200,
+            "spline-config": {
+                "primary": { "tension": 0.5, "spacing": 50 },
+                "lateral": { "tension": 0.5, "spacing": 20 }
+            }
+        }
+    }
+
+def create_new_model(name, parent_json=None, use_parent_config = False):
     return {
-        "name": "",
+        "name": name,
         "description": "",
         "uuid": str(uuid.uuid4()),
         "history": {
             "model": {
-                "parent-model": "",
+                "parent-model": parent_json["uuid"] if parent_json is not None else "",
                 "trained-by": {
                     "fullname": "Author full name",
                     "affiliation": "Author affiliation",
@@ -77,37 +104,11 @@ def create_blank_model():
                 "license": "Dataset license url"
             }
         },
-        "configuration": {
-            "multi-plant": False,
-            "network": {
-                "architecture": "hg",
-                "weights": "",
-                "url":"",
-                "scale": 0.00392156862745098,
-                "input-size": 1024,
-                "output-size": 512,
-                "channel-bindings": {
-                    "segmentation": { "Background": 0, "Primary": 1, "Lateral": 2 },
-                    "heatmap": { "Seed": 3, "Primary": 4, "Lateral": 5 }
-                }
-            },
-            "pathing": {
-                "rtree-threshold": 36,
-                "nms-threshold": 0.7,
-                "max-primary-distance": 400,
-                "max-lateral-distance": 200,
-                "spline-config": {
-                    "primary": { "tension": 0.5, "spacing": 50 },
-                    "lateral": { "tension": 0.5, "spacing": 20 }
-                }
-            }
-        }
+        "configuration": parent_json["configuration"] if use_parent_config else default_config()
     }
 
-
 def publish(args):
-    print ("Publish")
-    print (args)
+    print ("Publishing model \"{0}\"...".format(args.name))
 
     model_path = Path(args.model).resolve()
 
@@ -132,20 +133,23 @@ def publish(args):
         if parent_json is None:
             print ("Named parent could not be located, exiting.")
             exit()
+        else:
+        	print ("Loaded parent model") 
     else:
         parent_json = None
 
-    parent_uuid = parent_json["uuid"] if parent_json is not None else ""
+    if args.use_parent_config:
+    	print ("Using parent json configuration")
+    else:
+    	print ("Using default configuration")
 
     # Create new model json description
-    model_json = create_blank_model()
-    model_json["name"] = args.name
-    model_json["history"]["model"]["parent-model"] = parent_uuid
+    model_json = create_new_model(args.name, parent_json = parent_json, use_parent_config = args.use_parent_config)
     model_json["configuration"]["multi-plant"] = args.multi_plant
 
-    digest = hashlib.sha256()
-
     # Calculate hash prefix for this model
+    print ("Calculating hash prefix...", end="")
+    digest = hashlib.sha256()
     with open(model_path, 'rb') as model_f:
         data = model_f.read(1024)
         while len(data) > 0:
@@ -154,86 +158,20 @@ def publish(args):
     
     hash_prefix = digest.hexdigest()[:PREFIX_LENGTH]
 
+    print (hash_prefix)
+
     # Model install directory
-    model_json["configuration"]["network"]["weights"] = "{0}-{1}.pth".format(args.name, hash_prefix)
+    model_file_name = "{0}-{1}.pth".format(args.name, hash_prefix)
+    model_json["configuration"]["network"]["weights"] = model_file_name
     publish_model_path = publish_folder / model_json["configuration"]["network"]["weights"]
 
-    print (model_json)
+    # Copy model to output path
+    print ("Publishing model to {0}".format(model_path))
+    shutil.copyfile(model_path, publish_model_path)
+    
+    # Save json to output path
+    print ("Saving JSON description to {0}".format(publish_json_path))
+    with open(publish_json_path, 'w') as json_file:
+    	json.dump(model_json, json_file, indent=4)
 
-    """
-    if hash_prefix is not None:
-            sha256 = hashlib.sha256()
-        with tqdm(total=file_size, disable=not progress) as pbar:
-            while True:
-                buffer = u.read(8192)
-                if len(buffer) == 0:
-                    break
-                f.write(buffer)
-                if hash_prefix is not None:
-                    sha256.update(buffer)
-                pbar.update(len(buffer))
-
-        f.close()
-        if hash_prefix is not None:
-            digest = sha256.hexdigest()
-    """
-
-
-    """
-    "name": "osr_bluepaper",
-    "description": "Rapeseed grown on blue paper",
-    "uuid": "5edd7fdc-ceb1-44fa-9dfd-ef1197abac48",
-    "history": {
-        "model": {
-            "parent-model": "2d9ae372-b128-43de-87de-a905ac420b08",
-            "trained-by": {
-                "fullname": "Robail Yasrab",
-                "affiliation": "University of Nottingham",
-                "email": "robail.yasrab@nottingham.ac.uk"
-            },
-            "license": "https://creativecommons.org/licenses/by/4.0/"
-        },
-        "dataset": {
-            "owner": [
-                {
-                    "fullname": "Jonathan Atkinson",
-                    "affiliation": "University of Nottingham",
-                    "email": "jonathan.atkinson@nottingham.ac.uk"
-                },
-                {
-                    "fullname": "Darren Wells",
-                    "affiliation": "University of Nottingham",
-                    "email": "darren.wells@nottingham.ac.uk"
-                }
-            ],
-            "url": "https://plantimages.nottingham.ac.uk",
-            "license": "https://creativecommons.org/licenses/by-nc/4.0/"
-        }
-    },
-    "configuration": {
-        "multi-plant": false,
-        "network": {
-            "architecture": "hg",
-            "weights": "osr_bluepaper.pth",
-            "url":"https://cvl.cs.nott.ac.uk/resources/trainedmodels/osr_bluepaper-083ed788.pth",
-            "scale": 0.00392156862745098,
-            "input-size": 1024,
-            "output-size": 512,
-            "channel-bindings": {
-                "segmentation": { "Background": 0, "Primary": 3, "Lateral": 1 },
-                "heatmap": { "Seed": 5, "Primary": 4, "Lateral": 2 }
-            }
-        },
-        "pathing": {
-            "rtree-threshold": 36,
-            "nms-threshold": 0.7,
-            "max-primary-distance": 400,
-            "max-lateral-distance": 200,
-            "spline-config": {
-                "primary": { "tension": 0.5, "spacing": 50 },
-                "lateral": { "tension": 0.5, "spacing": 20 }
-            }
-        }
-    }
-    """
-    exit()
+    print ("Publishing complete. To use this model place these files within the RootNav 2 inference/models folder.")

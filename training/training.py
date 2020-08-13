@@ -275,6 +275,7 @@ if __name__ == "__main__":
     parser_publish.add_argument('--parent', default=None, metavar='P', help="The name of the parent model used to begin training")
     parser_publish.add_argument('--model', metavar='M', help="The trained weights file to publish")
     parser_publish.add_argument('--multi-plant', action='store_true', help="Whether or not images are expected to contain multiple plants")
+    parser_publish.add_argument('--use-parent-config', action='store_true', help="Whether or not to use the parent pathing and network configuration, or to use default values")
     parser_publish.add_argument('output_dir', default='./', type=str, help='Output directory')
     parser_publish.set_defaults(func=publish)
 
