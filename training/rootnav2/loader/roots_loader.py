@@ -136,7 +136,7 @@ class rootsLoader(data.Dataset):
         self.network_input_size = network_input_size
         self.network_output_size = network_output_size
         self.hflip = hflip
-        self.n_classes = 3
+        self.n_classes = 6
         self.files = []
 
         for filename in os.listdir(root + "/" + split):
