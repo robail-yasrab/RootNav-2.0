@@ -27,9 +27,43 @@ from rootnav2.schedulers import get_scheduler
 from rootnav2.optimizers import get_optimizer
 from pathlib import Path
 from publish import publish
+from tensorboardX import SummaryWriter
+def decode_segmap(temp, plot=False):
+    Seed = [255, 255, 255]
+    P_Root = [0, 255, 0]
+    L_Root = [255, 100, 100]
+    P_tip = [255, 0, 0]
+    L_tip = [147, 0, 227]
+    Back = [0, 0, 0]
 
+
+
+    label_colours = np.array(
+        [
+            Seed,
+            P_Root,
+            L_Root,
+            P_tip,
+            L_tip,
+            Back,
+        ]
+    )
+    r = temp.copy()
+    g = temp.copy()
+    b = temp.copy()
+    for l in range(0, 6):
+        r[temp == l] = label_colours[l, 0]
+        g[temp == l] = label_colours[l, 1]
+        b[temp == l] = label_colours[l, 2]
+
+    rgb = np.zeros((temp.shape[0], temp.shape[1], 3))
+    rgb[:, :, 0] = r / 255.0
+    rgb[:, :, 1] = g / 255.0
+    rgb[:, :, 2] = b / 255.0
+    return rgb
 # Class weights
-weights = [0.0021,0.1861,2.3898,0.6323,28.6333,31.0194]
+           
+weights = [0.0007,1.6246,0.7223,0.1789,1.748,12.9261] #[0.0021,0.1861,2.3898,0.6323,28.6333,31.0194]
 
 def train(args):
     # Load Config
@@ -39,7 +73,7 @@ def train(args):
     # Create log and output directory
     run_id = random.randint(1,100000)
     logdir = os.path.join('runs', os.path.basename(args.config)[:-4] , str(run_id))
-    #writer = SummaryWriter(log_dir=logdir)
+    writer = SummaryWriter(log_dir=logdir)
 
     print('RUNDIR: {}'.format(logdir))
 
@@ -195,7 +229,7 @@ def train(args):
 
                 print(print_str)
                 logger.info(print_str)
-                #writer.add_scalar('loss/train_loss', loss1.item(), i+1)
+                writer.add_scalar('loss/train_loss', loss1.item(), i+1)
                 time_meter.reset()
 
             if (i + 1) % cfg['training']['val_interval'] == 0 or \
@@ -219,14 +253,14 @@ def train(args):
                         val_loss_meter.update(val_loss1.item())
 
 
-                #writer.add_scalar('loss/val_loss', val_loss_meter.avg, i+1)
+                writer.add_scalar('loss/val_loss', val_loss_meter.avg, i+1)
                 logger.info("Iter %d Loss: %.4f" % (i + 1, val_loss_meter.avg))
 
                 score, class_iou = running_metrics_val.get_scores()
                 for k, v in score.items():
                     print(k, v)
                     logger.info('{}: {}'.format(k, v))
-                    #.add_scalar('val_metrics/{}'.format(k), v, i+1)
+                    writer.add_scalar('val_metrics/{}'.format(k), v, i+1)
 
                 for k, v in class_iou.items():
                     logger.info('{}: {}'.format(k, v))
@@ -235,7 +269,7 @@ def train(args):
                 val_loss_meter.reset()
                 running_metrics_val.reset()
                 #####################picture ##################              
-                decoded = v_loader.decode_segmap(pred1)              
+                decoded = decode_segmap(pred1)              
                 #############################################  
                 out_path = 'snapshot.jpg'
                 misc.imsave(out_path, decoded)
@@ -250,11 +284,11 @@ def train(args):
                         "scheduler_state": scheduler.state_dict(),
                         "best_iou": best_iou,
                     }
-                    #save_path = os.path.join(writer.file_writer.get_logdir(),
-                    #                         "{}_{}_best_model.pkl".format(
-                    #                             cfg['model']['arch'],
-                    #                             cfg['data']['dataset']))
-                    #torch.save(state, save_path)
+                    save_path = os.path.join(writer.file_writer.get_logdir(),
+                                             "{}_{}_best_model.pkl".format(
+                                                 cfg['model']['arch'],
+                                                 cfg['data']['dataset']))
+                    torch.save(state, save_path)
 
             if (i + 1) == cfg['training']['train_iters']:
                 flag = False

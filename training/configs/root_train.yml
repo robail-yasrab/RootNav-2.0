@@ -8,10 +8,10 @@ training:
     batch_size: 6   # (for two GPUs) chnage according to your GPU 
     val_interval: 500
     n_workers: 6    # (for two GPUs) chnage according to your GPU
-    print_interval: 100
+    print_interval: 10
     optimizer:
         name: 'rmsprop'
-        lr: 0.01   
+        lr: 0.0001   
         weight_decay: 0.001
         momentum: 0.9
     loss:
