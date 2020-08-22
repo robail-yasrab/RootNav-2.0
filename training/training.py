@@ -108,7 +108,7 @@ def train(args):
     data_loader = get_loader(cfg['data']['dataset'])
     data_path = cfg['data']['path']
 
-    print ("Dataset Loading from...", data_path)
+    print ("Dataset Loading from", data_path)
 
     t_loader = data_loader(
         data_path,
@@ -178,18 +178,10 @@ def train(args):
     bce_criterion = torch.nn.CrossEntropyLoss(weight=class_weights).to(device)
     mse_criterion = torch.nn.MSELoss(size_average=True).to(device)
 
+    print ("Starting training")
     while i <= cfg['training']['train_iters'] and flag:
         for (images, labels, hm) in trainloader:
 
-            # LIST OF network OUTPUTS
-            # seg = outputs[0] : Batch x 3 x 512 x 512
-            # reg = outputs[1] : Batch x 3 x 512 x 512
-            #
-            # LIST OF Loader OUTPUTS
-            # labels from loader : Batch x 1 x 512 x 512
-            # 0 = BG, 1 = PRI, 2 = LAT
-            #
-            # hm from loader: Batch x 3 x 512 x 512
             i += 1
             start_ts = time.time()
             scheduler.step()
@@ -268,12 +260,13 @@ def train(args):
 
                 val_loss_meter.reset()
                 running_metrics_val.reset()
-                #####################picture ##################              
-                decoded = decode_segmap(pred1)              
-                #############################################  
-                out_path = 'snapshot.jpg'
-                misc.imsave(out_path, decoded)
-                #############################################
+
+                if (args.output_example):
+                    # Output example image
+                    decoded = decode_segmap(pred1)
+                    out_path = 'validation_example.jpg'
+                    misc.imsave(out_path, decoded)
+                    print ("Example image saved")
 
                 if score["Mean IoU : \t"] >= best_iou:
                     best_iou = score["Mean IoU : \t"]
@@ -301,6 +294,7 @@ if __name__ == "__main__":
     # Train sub command
     parser_train = subparsers.add_parser('train', help='Train new models')
     parser_train.add_argument("--config", nargs="?", type=str, default="configs/rootnav2.yml", help="Configuration file to use")
+    parser_train.add_argument('--output-example', action='store_true', help="Whether or not to output an example image each validation step")
     parser_train.set_defaults(func=train)
 
     # Publish sub command
