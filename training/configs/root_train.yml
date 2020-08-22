@@ -5,13 +5,13 @@ data:
     path: ./OSR_Root_dataset/ #edit your dataset path
 training:
     train_iters: 25000000
-    batch_size: 6   # (for two GPUs) chnage according to your GPU 
-    val_interval: 500
-    n_workers: 6    # (for two GPUs) chnage according to your GPU
-    print_interval: 10
+    batch_size: 6   # (for two GPUs) change according to your GPU
+    val_interval: 100
+    n_workers: 6    # (for two GPUs) change according to your GPU
+    print_interval: 50
     optimizer:
         name: 'rmsprop'
-        lr: 0.0001   
+        lr: 0.0001
         weight_decay: 0.001
         momentum: 0.9
     loss:
@@ -22,5 +22,5 @@ training:
         hflip: 0.5
 
     lr_schedule:
-    resume:                                              #./inference/models/wheat_bluepaper.pth
-                                                         # (can use the trained model from inference section)
+    resume: #../inference/models/wheat_bluepaper.pth
+            # (can use the trained model from inference section)
