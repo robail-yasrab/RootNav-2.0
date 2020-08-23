@@ -1,4 +1,4 @@
-## Inference
+# Inference
 The inference code runs the complete Rootnav 2 pipeline. Using a trained network, images are segmented and root tip features located. These are then used by a shortest path search to reconstruct a likely root topology, which is output in the commonly used RSML format.
 
 Our publication releases three trained models on three datasets:
