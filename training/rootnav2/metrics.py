@@ -3,6 +3,38 @@
 
 import numpy as np
 
+class LocalisationAccuracyMeter():
+    def __init__(self, channel_count):
+        self.channel_count = channel_count
+        self.tp = [0] * channel_count
+        self.fp = [0] * channel_count
+        self.fn = [0] * channel_count
+
+    def update(self, channel_results):
+        for i in range(self.channel_count):
+            self.tp[i] += channel_results[i][0]
+            self.fp[i] += channel_results[i][1]
+            self.fn[i] += channel_results[i][2]
+
+    def f1(self):
+        results = []
+
+        for i in range(self.channel_count):
+            tp, fp, fn = self.tp[i], self.fp[i], self.fn[i]
+            precision, recall = 0.0, 0.0
+        
+            if tp + fp > 0:
+                precision = tp / float(tp + fp)
+
+            if tp + fn > 0:
+                recall = tp / float(tp + fn)
+
+            f1 = 0.0
+            if precision + recall > 0:
+                f1 = 2 * (precision * recall) / (precision + recall)
+            results.append((precision, recall, f1))
+        return results
+
 
 class runningScore(object):
     def __init__(self, n_classes):

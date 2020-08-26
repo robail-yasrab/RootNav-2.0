@@ -265,10 +265,6 @@ class rootsLoader(data.Dataset):
         # Convert input PIL image to tensor
         image = to_tensor(image)
 
-        #print ("Image", image.shape)
-        #print ("Mask", mask.shape)
-        #print ("Heatmap", hm.shape)
-
         # Debugging
         #from torchvision.utils import save_image
         #save_image(image, "source.png")
@@ -277,4 +273,12 @@ class rootsLoader(data.Dataset):
         #save_image(hm[2], 'lat_hm.png')
         #save_image(mask, 'mask.png')
 
-        return image, mask, hm
+        if self.split == 'test':
+            annotations = {
+                "seeds": cache["seeds"].mul(scale) if cache["seeds"].size(0) > 0 else torch.Tensor((0)),
+                "primary": cache["primary"].mul(scale) if cache["primary"].size(0) > 0 else torch.Tensor((0)),
+                "lateral": cache["lateral"].mul(scale) if cache["lateral"].size(0) > 0 else torch.Tensor((0))
+            }
+            return image, mask, annotations
+        else:
+            return image, mask, hm

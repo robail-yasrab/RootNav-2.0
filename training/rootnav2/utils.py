@@ -5,8 +5,64 @@ import os
 import logging
 import datetime
 import numpy as np
+import torch
+import collections
 
 from collections import OrderedDict
+
+def decode_segmap(temp, plot=False):
+    Seed = [255, 255, 255]
+    P_Root = [0, 255, 0]
+    L_Root = [255, 100, 100]
+    P_tip = [255, 0, 0]
+    L_tip = [147, 0, 227]
+    Back = [0, 0, 0]
+
+    label_colours = torch.Tensor(
+        [
+            Seed,
+            P_Root,
+            L_Root,
+            P_tip,
+            L_tip,
+            Back,
+        ]
+    )
+    r = temp.clone()
+    g = temp.clone()
+    b = temp.clone()
+    for l in range(0, 6):
+        r[temp == l] = label_colours[l, 0]
+        g[temp == l] = label_colours[l, 1]
+        b[temp == l] = label_colours[l, 2]
+
+    rgb = torch.zeros((3, temp.shape[0], temp.shape[1]))
+    rgb[0, :, :] = r / 255.0
+    rgb[1, :, :] = g / 255.0
+    rgb[2, :, :] = b / 255.0
+    return rgb
+
+def dict_collate(batch):
+    if isinstance(batch[0], collections.Mapping):
+        return {key: [d[key] for d in batch] for key in batch[0]}
+    elif torch.is_tensor(batch[0]):
+        # If we're in a background process, concatenate directly into a
+        # shared memory tensor to avoid an extra copy
+        # This is true when number of threads > 1
+        numel = sum([x.numel() for x in batch])
+        storage = batch[0].storage()._new_shared(numel)
+        out = batch[0].new(storage)
+        return torch.stack(batch, 0, out=out)
+    elif isinstance(batch[0], collections.Sequence):
+        # check to make sure that the elements in batch have consistent size
+        it = iter(batch)
+        elem_size = len(next(it))
+        if not all(len(elem) == elem_size for elem in it):
+            raise RuntimeError('each element in list of batch should be of equal size')
+        transposed = zip(*batch)
+        return tuple(dict_collate(samples) for samples in transposed)
+    else:
+        raise TypeError("BAD TYPE", type(batch[0]))
 
 def recursive_glob(rootdir=".", suffix=""):
     """Performs recursive glob with given suffix and rootdir 

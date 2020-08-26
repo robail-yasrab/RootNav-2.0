@@ -1,7 +1,7 @@
 model:
     arch: HG
 data:
-    dataset: roots
+    dataset: roots # "roots" is currently the only dataset supported and represents image/rsml pairs
     path: ./OSR_Root_dataset/ #edit your dataset path
 training:
     train_iters: 25000000
@@ -24,3 +24,6 @@ training:
     lr_schedule:
     resume: #../inference/models/wheat_bluepaper.pth
             # (can use the trained model from inference section)
+testing:
+    batch_size: 6
+    n_workers: 6
