@@ -27,6 +27,7 @@ from rootnav2.schedulers import get_scheduler
 from rootnav2.optimizers import get_optimizer
 from pathlib import Path
 from publish import publish
+from test import test
 from tensorboardX import SummaryWriter
 def decode_segmap(temp, plot=False):
     Seed = [255, 255, 255]
@@ -306,6 +307,12 @@ if __name__ == "__main__":
     parser_publish.add_argument('--use-parent-config', action='store_true', help="Whether or not to use the parent pathing and network configuration, or to use default values")
     parser_publish.add_argument('output_dir', default='./', type=str, help='Output directory')
     parser_publish.set_defaults(func=publish)
+
+    # Testing sub command
+    parser_test = subparsers.add_parser('test', help='Test already trained models')
+    parser_test.add_argument('--model', metavar='M', help="The trained weights file to test")
+    parser_test.add_argument("--config", nargs="?", type=str, default="configs/rootnav2.yml", help="Configuration file to use")
+    parser_test.set_defaults(func=test)
 
     args = parser.parse_args()
     args.func(args)
