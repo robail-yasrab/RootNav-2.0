@@ -7,8 +7,6 @@ Version 2.1 makes substantial improvements to the training code for RootNav 2, m
 * Masks for training are now created by default when training begins, and cached for future runs. Only RSML is required.
 * Once training is complete, you can publish a model to be used within RootNav 2 using the `training.py publish` function.
 
-Full updates may be found in the [change log](CHANGELOG.md).
-
 ### Longer term features
 * Additional trained models. If you have datasets you'd like to see work with the tool and aren't covered by our examples, please get in touch and we can collaborate!
 * Improved model and training code. We will continuously review the model architectures and training code to explore ways to increase performance.
