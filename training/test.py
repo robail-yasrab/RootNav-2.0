@@ -131,14 +131,14 @@ def test(args):
             accuracy_meter.update(channel_results)
             #################################
 
-        print ("Processed {0} images".format(total))
+        print ("\r\nProcessed {0} images".format(total))
         metrics, class_iou = running_metrics.get_scores()
 
         print ("\r\nSegmentation Results:")
-        print ("Overall Accuracy : {0:.4f}".format(metrics['Overall Acc: \t']))
-        print ("Mean Accuracy : {0:.4f}".format(metrics['Mean Acc : \t']))
-        print ("FreqW Accuracy : {0:.4f}".format(metrics['FreqW Acc : \t']))
-        print ("Root Mean IoU: {0:.4f}".format((class_iou[0] + class_iou[1] + class_iou[3]) / 3))
+        print ("Overall Accuracy: {0:.4f}".format(metrics['oacc']))
+        print ("Mean Accuracy:    {0:.4f}".format(metrics['macc']))
+        print ("FreqW Accuracy:   {0:.4f}".format(metrics['facc']))
+        print ("Root Mean IoU:    {0:.4f}".format((class_iou[0] + class_iou[1] + class_iou[3]) / 3))
 
         print ("\r\nLocalisation Results:")
         format_string = "{0}\tPrecision: {1:.4f}  Recall: {2:.4f}  F1: {3:.4f}"
