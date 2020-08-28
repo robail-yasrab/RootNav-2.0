@@ -251,9 +251,15 @@ def train(args):
                 logger.info("Iter %d Loss: %.4f" % (i + 1, val_loss_meter.avg))
 
                 score, class_iou = running_metrics_val.get_scores()
-                for k, v in score.items():
-                    print("", k, round(v,4))
-                    logger.info('{}: {}'.format(k, v))
+
+                results = ["Overall Accuracy: {0:.6f}".format(score['oacc']),
+                           "Mean Accuracy:    {0:.6f}".format(score['macc']),
+                           "FreqW Accuracy:   {0:.6f}".format(score['facc']),
+                           "Mean IoU:         {0:.6f}".format(score['miou'])]
+
+                print ("", "\r\n ".join(results))
+                for log_entry in results:
+                    logger.info(log_entry)
 
                 for k, v in class_iou.items():
                     logger.info('{}: {}'.format(k, v))
@@ -269,8 +275,8 @@ def train(args):
                     misc.imsave(out_path, decoded)
                     print (" Example image saved")
 
-                if score["Mean IoU : \t"] >= best_iou:
-                    best_iou = score["Mean IoU : \t"]
+                if score['miou'] >= best_iou:
+                    best_iou = score['miou']
                     state = {
                         "epoch": i + 1,
                         "model_state": model.state_dict(),
