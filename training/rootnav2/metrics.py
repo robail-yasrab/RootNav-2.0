@@ -3,6 +3,38 @@
 
 import numpy as np
 
+class LocalisationAccuracyMeter():
+    def __init__(self, channel_count):
+        self.channel_count = channel_count
+        self.tp = [0] * channel_count
+        self.fp = [0] * channel_count
+        self.fn = [0] * channel_count
+
+    def update(self, channel_results):
+        for i in range(self.channel_count):
+            self.tp[i] += channel_results[i][0]
+            self.fp[i] += channel_results[i][1]
+            self.fn[i] += channel_results[i][2]
+
+    def f1(self):
+        results = []
+
+        for i in range(self.channel_count):
+            tp, fp, fn = self.tp[i], self.fp[i], self.fn[i]
+            precision, recall = 0.0, 0.0
+        
+            if tp + fp > 0:
+                precision = tp / float(tp + fp)
+
+            if tp + fn > 0:
+                recall = tp / float(tp + fn)
+
+            f1 = 0.0
+            if precision + recall > 0:
+                f1 = 2 * (precision * recall) / (precision + recall)
+            results.append((precision, recall, f1))
+        return results
+
 
 class runningScore(object):
     def __init__(self, n_classes):
@@ -42,10 +74,10 @@ class runningScore(object):
 
         return (
             {
-                "Overall Acc: \t": acc,
-                "Mean Acc : \t": acc_cls,
-                "FreqW Acc : \t": fwavacc,
-                "Mean IoU : \t": mean_iu,
+                "oacc": acc,
+                "macc": acc_cls,
+                "facc": fwavacc,
+                "miou": mean_iu,
             },
             cls_iu,
         )

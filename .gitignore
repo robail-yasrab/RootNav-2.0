@@ -5,3 +5,4 @@ inference/models/*.pkl
 inference/models/*.pth
 training/runs/*
 *.pyc
+*.pt

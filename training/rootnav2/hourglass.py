@@ -5,7 +5,7 @@ Use lr=0.01 for current version
 '''
 import torch.nn as nn
 import torch.nn.functional as F
-print ('Hourglass CNN')
+#print 'hourglass biu biu'
 # from .preresnet import BasicBlock, Bottleneck
 
 
@@ -95,7 +95,6 @@ class Hourglass(nn.Module):
         super(Hourglass, self).__init__()
         self.depth = depth
         self.block = block
-        self.upsample = nn.Upsample(scale_factor=2)
         self.hg = self._make_hour_glass(block, num_blocks, planes, depth)
 
     def _make_residual(self, block, num_blocks, planes):
@@ -125,7 +124,7 @@ class Hourglass(nn.Module):
         else:
             low2 = self.hg[n-1][3](low1)
         low3 = self.hg[n-1][2](low2)
-        up2 = self.upsample(low3)
+        up2 = F.interpolate(low3, scale_factor=2, mode='nearest')
         out = up1 + up2
         return out
 
@@ -135,7 +134,7 @@ class Hourglass(nn.Module):
 
 class HourglassNet(nn.Module):
     '''Hourglass model from Newell et al ECCV 2016'''
-    def __init__(self, block, num_stacks=1, num_blocks=1, num_classes=6):
+    def __init__(self, block, num_stacks=1, num_blocks=1, num_classes=3):
         super(HourglassNet, self).__init__()
 
         self.inplanes = 64
@@ -154,6 +153,9 @@ class HourglassNet(nn.Module):
 
 
 
+
+        #print num_stacks
+        #print num_blocks
         # build hourglass modules
         ch = self.num_feats*block.expansion
         hg, res, fc, score, fc_, score_ = [], [], [], [], [], []

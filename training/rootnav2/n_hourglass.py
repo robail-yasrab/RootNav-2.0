@@ -153,15 +153,11 @@ class HourglassNet(nn.Module):
         self.conv2 = nn.Conv2d(128, self.inplanes, kernel_size=1, stride=1, padding=0,
                                bias=True)
 
-        self.conv3 = nn.Conv2d(128, 6, kernel_size=1, stride=1, padding=0,
+        self.seg_conv_out = nn.Conv2d(128, 3, kernel_size=1, stride=1, padding=0,
                                bias=True)
 
-        self.soft_conv = nn.Conv2d(128, 3, kernel_size=1, stride=1, padding=0,
+        self.reg_conv_out = nn.Conv2d(128, 3, kernel_size=1, stride=1, padding=0,
                                bias=True)
-
-        self.soft_max = nn.Softmax2d()
-
-
 
 
         #print num_stacks
@@ -253,16 +249,12 @@ class HourglassNet(nn.Module):
 
         x = self.conv2(x)
         #print x.shape, "CON 2" 
-        y = x
         
-        x = self.conv3(x)
+        seg_out = self.seg_conv_out(x)
+        reg_out = self.reg_conv_out(x)
+       
+        return seg_out, reg_out
         #print x.shape, "CON 3" 
- 
-        z = self.soft_conv(y)
-        z = self.soft_max(z)
-        #print z.shape, "softmax" 
-
-        return x, z
 
 
 def hg(**kwargs):
