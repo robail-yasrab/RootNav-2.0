@@ -23,68 +23,102 @@ from rootnav2.loss import get_loss_function
 from rootnav2.loader import get_loader 
 from rootnav2.utils import get_logger
 from rootnav2.metrics import runningScore, averageMeter
-from rootnav2.augmentations import get_composed_augmentations
 from rootnav2.schedulers import get_scheduler
 from rootnav2.optimizers import get_optimizer
+from pathlib import Path
+from publish import publish
+from test import test
 from tensorboardX import SummaryWriter
+def decode_segmap(temp, plot=False):
+    Seed = [255, 255, 255]
+    P_Root = [0, 255, 0]
+    L_Root = [255, 100, 100]
+    P_tip = [255, 0, 0]
+    L_tip = [147, 0, 227]
+    Back = [0, 0, 0]
 
 
-weights =[0.0021,0.1861,2.3898,0.6323,28.6333,31.0194]
-class_weights = torch.FloatTensor(weights).cuda()
-def show_example(img, gt_mask, pred_mask):
-    img_np = img.cpu().data.numpy()
 
-    img_np = np.transpose(img_np, [1,2,0])
-    img_np = cv2.resize(img_np, (512,512))
+    label_colours = np.array(
+        [
+            Seed,
+            P_Root,
+            L_Root,
+            P_tip,
+            L_tip,
+            Back,
+        ]
+    )
+    r = temp.copy()
+    g = temp.copy()
+    b = temp.copy()
+    for l in range(0, 6):
+        r[temp == l] = label_colours[l, 0]
+        g[temp == l] = label_colours[l, 1]
+        b[temp == l] = label_colours[l, 2]
 
+    rgb = np.zeros((temp.shape[0], temp.shape[1], 3))
+    rgb[:, :, 0] = r / 255.0
+    rgb[:, :, 1] = g / 255.0
+    rgb[:, :, 2] = b / 255.0
+    return rgb
+# Class weights
+           
+weights = [0.0007,1.6246,0.7223,0.1789,1.748,12.9261] #[0.0021,0.1861,2.3898,0.6323,28.6333,31.0194]
 
-    gt_mask_np = np.transpose(gt_mask, [1,2,0]) * 255.0   
-    gt_mask_np = np.repeat(gt_mask_np, 3, 2)
-    gt_mask_np = cv2.resize(gt_mask_np, (512,512))
-    pred_mask = np.asarray(pred_mask) #.cpu().numpy()
+def train(args):
+    # Load Config
+    with open(args.config) as fp:
+        cfg = yaml.load(fp)
 
-    pred_mask = cv2.resize(pred_mask, (512,512))
+    # Create log and output directory
+    run_id = random.randint(1,100000)
+    logdir = os.path.join('runs', os.path.basename(args.config)[:-4] , str(run_id))
+    writer = SummaryWriter(log_dir=logdir)
 
-    img = np.concatenate((img_np, gt_mask_np, pred_mask), axis=1)
-    plt.imshow(img, cmap = 'gray', interpolation = 'bicubic')
-    plt.xticks([]), plt.yticks([])  # to hide tick values on X and Y axis
-    plt.show()
-    plt.savefig('3pic', bbox_inches="tight", pad_inches=0)
+    print('RUNDIR: {}'.format(logdir))
 
+    if not os.path.exists(logdir):
+        os.makedirs(logdir)
+
+    shutil.copy(args.config, logdir)
+
+    logger = get_logger(logdir)
+    logger.info('Starting training')
+
+    # Setup device
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
-def train(cfg, logger, logdir):
-    
+    # Class weights
+    class_weights = torch.FloatTensor(weights).to(device)
+
     # Setup seeds
     torch.manual_seed(cfg.get('seed', 1337))
     torch.cuda.manual_seed(cfg.get('seed', 1337))
     np.random.seed(cfg.get('seed', 1337))
     random.seed(cfg.get('seed', 1337))
 
-    # Setup device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    # Setup Augmentations
-    augmentations = cfg['training'].get('augmentations', None)
-    data_aug = get_composed_augmentations(augmentations)
+    # Is hflip in use?
+    augmentations = cfg['training'].get('augmentations', 0.0)
+    if augmentations is not None:
+        hflip = augmentations.get('hflip', 0.0)
+    else:
+        hflip = 0.0
 
     # Setup Dataloader
     data_loader = get_loader(cfg['data']['dataset'])
     data_path = cfg['data']['path']
 
-    print ("Dataset Loading from...", data_path)
+    print ("Dataset Loading from", data_path)
 
     t_loader = data_loader(
         data_path,
-        is_transform=True,
-        split=cfg['data']['train_split'],
-        img_size=(cfg['data']['img_rows'], cfg['data']['img_cols']),
-        augmentations=data_aug)
+        split='train',
+        hflip=hflip)
 
     v_loader = data_loader(
         data_path,
-        is_transform=True,
-        split=cfg['data']['val_split'],
-        img_size=(cfg['data']['img_rows'], cfg['data']['img_cols']),)
+        split='valid')
 
     n_classes = t_loader.n_classes
     trainloader = data.DataLoader(t_loader,
@@ -103,7 +137,7 @@ def train(cfg, logger, logdir):
     model =  hg()
 
     model = torch.nn.DataParallel(model, device_ids=range(torch.cuda.device_count()))
-    model.cuda()
+    model.to(device)
     # Setup optimizer, lr_scheduler and loss function
     optimizer_cls = get_optimizer(cfg)
     optimizer_params = {k:v for k, v in cfg['training']['optimizer'].items() 
@@ -142,10 +176,13 @@ def train(cfg, logger, logdir):
     best_iou = -100.0
     i = start_iter
     flag = True
-    loss = torch.nn.CrossEntropyLoss(weight=class_weights)
-    criterion = torch.nn.MSELoss(size_average=True).cuda()
+    bce_criterion = torch.nn.CrossEntropyLoss(weight=class_weights).to(device)
+    mse_criterion = torch.nn.MSELoss(size_average=True).to(device)
+
+    print ("Starting training")
     while i <= cfg['training']['train_iters'] and flag:
-        for (images, labels, hm, gt) in trainloader:
+        for (images, labels, hm) in trainloader:
+
             i += 1
             start_ts = time.time()
             scheduler.step()
@@ -153,36 +190,28 @@ def train(cfg, logger, logdir):
             images = images.to(device)
             labels = labels.to(device)
             hm = hm.to(device)
-            gt = gt.to(device)
 
             outputs= model(images)
             out_main= outputs[-1]
+            sys.stdout.flush()
             
-
             optimizer.zero_grad()
             
-            loss1 = loss(input=out_main, target=labels)
+            loss1 = bce_criterion(input=out_main, target=labels)
 
-            out_gt= out_main[:,1:,:,:]
-                       
-            loss2 = criterion(input=out_gt, target=gt)
-            out5= out_main[:,5:6,:,:]       #Lat tip    
-            out4= out_main[:,4:5,:,:]       # Pri tip
-            out2= out_main[:,2:3,:,:]       # Seed Location  
+            out5= out_main[:,5:6,:,:] 
+            out4= out_main[:,4:5,:,:]
+            out2= out_main[:,2:3,:,:] 
 
             tips = torch.cat((out2, out4,  out5), 1)
-            loss3 = criterion(input=tips, target=hm)
+            loss2 = mse_criterion(input=tips, target=hm)
 
             loss1.backward(retain_graph=True)
-            loss2.backward(retain_graph=True)
-            loss3.backward()
-     
+            loss2.backward()
 
             optimizer.step()
- 
 
             time_meter.update(time.time() - start_ts)
-
 
             if (i + 1) % cfg['training']['print_interval'] == 0:
                 fmt_str = "Iter [{:d}/{:d}]  Loss: {:.4f}  Time/Image: {:.4f}"
@@ -199,22 +228,20 @@ def train(cfg, logger, logdir):
             if (i + 1) % cfg['training']['val_interval'] == 0 or \
                (i + 1) == cfg['training']['train_iters']:
                 model.eval()
+                print ("Validation:")
                 with torch.no_grad():
-                    for i_val, (images_val, labels_val, hm, gt) in tqdm(enumerate(valloader)):
+                    for images_val, labels_val, hm in valloader:
                         images_val = images_val.to(device)
                         labels_val = labels_val.to(device)
-                        gt = gt.to(device)
+                        
                         outputs = model(images_val)
                         outputs1= outputs[-1]
                         
-
-                        val_loss1 = loss(input=outputs1, target=labels_val)
+                        val_loss1 = bce_criterion(input=outputs1, target=labels_val)
                         
-
                         pred = outputs1.data.max(1)[1].cpu().numpy()
                         pred1 = np.squeeze(outputs1[0:1,:,:,:].data.max(1)[1].cpu().numpy(), axis=0)
                         gt = labels_val.data.cpu().numpy()
-
 
                         running_metrics_val.update(gt, pred)
                         val_loss_meter.update(val_loss1.item())
@@ -224,10 +251,15 @@ def train(cfg, logger, logdir):
                 logger.info("Iter %d Loss: %.4f" % (i + 1, val_loss_meter.avg))
 
                 score, class_iou = running_metrics_val.get_scores()
-                for k, v in score.items():
-                    print(k, v)
-                    logger.info('{}: {}'.format(k, v))
-                    #.add_scalar('val_metrics/{}'.format(k), v, i+1)
+
+                results = ["Overall Accuracy: {0:.6f}".format(score['oacc']),
+                           "Mean Accuracy:    {0:.6f}".format(score['macc']),
+                           "FreqW Accuracy:   {0:.6f}".format(score['facc']),
+                           "Mean IoU:         {0:.6f}".format(score['miou'])]
+
+                print ("", "\r\n ".join(results))
+                for log_entry in results:
+                    logger.info(log_entry)
 
                 for k, v in class_iou.items():
                     logger.info('{}: {}'.format(k, v))
@@ -235,15 +267,16 @@ def train(cfg, logger, logdir):
 
                 val_loss_meter.reset()
                 running_metrics_val.reset()
-                #####################picture ##################              
-                decoded = v_loader.decode_segmap(pred1)              
-                #############################################  
-                out_path = 'snapshot.jpg'
-                misc.imsave(out_path, decoded)
-                #############################################
 
-                if score["Mean IoU : \t"] >= best_iou:
-                    best_iou = score["Mean IoU : \t"]
+                if (args.output_example):
+                    # Output example image
+                    decoded = decode_segmap(pred1)
+                    out_path = 'validation_example.jpg'
+                    misc.imsave(out_path, decoded)
+                    print (" Example image saved")
+
+                if score['miou'] >= best_iou:
+                    best_iou = score['miou']
                     state = {
                         "epoch": i + 1,
                         "model_state": model.state_dict(),
@@ -261,36 +294,31 @@ def train(cfg, logger, logdir):
                 flag = False
                 break
 
-
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="config")
-    parser.add_argument(
-        "--config",
-        nargs="?",
-        type=str,
-        default="configs/rootnav2.yml",
-        help="Configuration file to use"
-    )
+    parser = argparse.ArgumentParser(description="RootNav 2 Training")
+    subparsers = parser.add_subparsers(title="Mode")
+
+    # Train sub command
+    parser_train = subparsers.add_parser('train', help='Train new models')
+    parser_train.add_argument("--config", nargs="?", type=str, default="configs/rootnav2.yml", help="Configuration file to use")
+    parser_train.add_argument('--output-example', action='store_true', help="Whether or not to output an example image each validation step")
+    parser_train.set_defaults(func=train)
+
+    # Publish sub command
+    parser_publish = subparsers.add_parser('publish', help='Publish already trained models')
+    parser_publish.add_argument('--name', default="published_model", metavar='N', help="The name of the new published model")
+    parser_publish.add_argument('--parent', default=None, metavar='P', help="The name of the parent model used to begin training")
+    parser_publish.add_argument('--model', metavar='M', help="The trained weights file to publish")
+    parser_publish.add_argument('--multi-plant', action='store_true', help="Whether or not images are expected to contain multiple plants")
+    parser_publish.add_argument('--use-parent-config', action='store_true', help="Whether or not to use the parent pathing and network configuration, or to use default values")
+    parser_publish.add_argument('output_dir', default='./', type=str, help='Output directory')
+    parser_publish.set_defaults(func=publish)
+
+    # Testing sub command
+    parser_test = subparsers.add_parser('test', help='Test already trained models')
+    parser_test.add_argument('--model', metavar='M', help="The trained weights file to test")
+    parser_test.add_argument("--config", nargs="?", type=str, default="configs/rootnav2.yml", help="Configuration file to use")
+    parser_test.set_defaults(func=test)
 
     args = parser.parse_args()
-
-    with open(args.config) as fp:
-        cfg = yaml.load(fp)
-
-    run_id = random.randint(1,100000)
-    logdir = os.path.join('runs', os.path.basename(args.config)[:-4] , str(run_id))
-    writer = SummaryWriter(log_dir=logdir)
-
-
-
-    print('RUNDIR: {}'.format(logdir))
-
-    if not os.path.exists(logdir):
-        os.makedirs(logdir)
-
-    shutil.copy(args.config, logdir)
-
-    logger = get_logger(logdir)
-    logger.info('Starting training')
-
-    train(cfg, logger, logdir)
+    args.func(args)
