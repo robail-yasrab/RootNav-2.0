@@ -228,8 +228,9 @@ def train(args):
             if (i + 1) % cfg['training']['val_interval'] == 0 or \
                (i + 1) == cfg['training']['train_iters']:
                 model.eval()
+                print ("Validation:")
                 with torch.no_grad():
-                    for i_val, (images_val, labels_val, hm) in tqdm(enumerate(valloader)):
+                    for images_val, labels_val, hm in valloader:
                         images_val = images_val.to(device)
                         labels_val = labels_val.to(device)
                         
@@ -251,9 +252,8 @@ def train(args):
 
                 score, class_iou = running_metrics_val.get_scores()
                 for k, v in score.items():
-                    print(k, v)
+                    print("", k, round(v,4))
                     logger.info('{}: {}'.format(k, v))
-                    writer.add_scalar('val_metrics/{}'.format(k), v, i+1)
 
                 for k, v in class_iou.items():
                     logger.info('{}: {}'.format(k, v))
@@ -267,7 +267,7 @@ def train(args):
                     decoded = decode_segmap(pred1)
                     out_path = 'validation_example.jpg'
                     misc.imsave(out_path, decoded)
-                    print ("Example image saved")
+                    print (" Example image saved")
 
                 if score["Mean IoU : \t"] >= best_iou:
                     best_iou = score["Mean IoU : \t"]
