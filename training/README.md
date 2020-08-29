@@ -6,7 +6,7 @@ The training code trains new deep networks to simultaneously segment root materi
 3. Publish the trained model weights and a JSON description to the inference folder.
 4. Use the inference code to run RootNav 2 on new images.
 
-This readme assumes you have installed the requisite libraries and drivers. A CUDA compatible device is required to train due otherwise training will be too slow. In addition to the dependencies listed in the main instlalation instructions, the training code makes use of tensorboardX to write log files during training. You can install this using:
+This readme assumes you have installed the requisite libraries and drivers. A CUDA compatible device is required to train otherwise training will be too slow. In addition to the dependencies listed in the main installation instructions, the training code makes use of tensorboardX to write log files during training. You can install this using:
 ```
 pip install tensorboardx
 ```
@@ -23,7 +23,7 @@ new_dataset/
     test/ [Optional, used after training]
 ```
 
-Within each folder should be pairs of images and identically named RSML files. An example is given within the repository [here](https://github.com/robail-yasrab/RootNav-2.0/tree/master/training/OSR_Root_dataset). when training begins the script will scan the directory for valid training pairs, render segmentation masks and store all required training data within cache files in the same directory.
+Within each folder should be pairs of images and identically named RSML files. An example dataset is given within the repository [here](https://github.com/robail-yasrab/RootNav-2.0/tree/master/training/OSR_Root_dataset). when training begins the script will scan the directory for valid training pairs, render segmentation masks and store all required training data within cache files in the same directory.
 
 Note that the class weights used by the cross entropy loss are hard coded into the training file. For most datasets these will be satisfactory, you can adapt these to your own dataset if required. We use a script for this [here](https://github.com/robail-yasrab/dataset_weights) and will be adapting this into the training code in due course.
 
@@ -44,6 +44,27 @@ Iter [200/25000000]  Loss: 0.0760  Time/Image: 0.1693
 ...
 ```
 Validation results will also appear here when they are run.
+### Testing
+The training process will save the best performing network within the run/#### folder. This is the best performance on the validation set, rather than the training set. Despite this, a separate test on new data is worthwhile to ensure the network generalises well. The `test` command can be used to run a single iteration over the test set, providing a number of segmentation and localisation metrics in order to measure performance. Testing is run using the following command:
+```
+python training.py test --config configs/root_train.yml --model ./new_trained_model.pkl
+```
+As with training, the config file holds the location of the test set, and the number of threads / batch size. Most other configuration requirements are not relevant to testing. You will see output like this:
+```
+Processed 50 images
+
+Segmentation Results:
+Overall Accuracy: 0.9939
+Mean Accuracy:    0.7578
+FreqW Accuracy:   0.9900
+Root Mean IoU:    0.6253
+
+Localisation Results:
+Seeds   Precision: 1.0000  Recall: 1.0000  F1: 1.0000
+Primary Precision: 0.9442  Recall: 0.9556  F1: 0.9499
+Lateral Precision: 0.7237  Recall: 0.8871  F1: 0.7971
+```
+It should be noted that these results measure the performance of the CNN only, not the full pipeline including path finding. However, a network that increases performance on these metrics is unlikely to perform worse when used within RootNav 2, and so this is a good test to use to compare two trained networks on a dataset.
 ### Publishing
 Training will output network weights as snapshots. RootNav 2 uses these weight files during inference according to settings described in a model JSON configuration. Examples can be found in the inference code. Once training is complete and you have a specific weight file you wish to use with the inference code, the `publish` command can help produce the necessary JSON configuration. The command is used as follows:
 
