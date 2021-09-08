@@ -7,7 +7,7 @@ scipy==1.2.1
 pydensecrf==1.0rc3
 matplotlib==2.2.2
 tensorboardx==2.0
-pillow==5.4.1
+pillow==8.3.2
 kdtree==0.16
 pyyaml==3.13
 tqdm==4.23.4
