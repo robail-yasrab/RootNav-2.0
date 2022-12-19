@@ -1,7 +1,7 @@
 # RootNav 2.0
 This is the RootNav 2.0 Code repository. This README and the repository code are being improved daily as we prepare for publication, please check back for new features and documentation soon!
 
-Note: This branch should not be used to run RootNav 2. Please use the master branch.
+Note: This branch should not be used to run RootNav 2. Please use the master branch for all normal use.
 
 ### 8 August 2019 - New features
 * CRF support is now optional, allowing those that have trouble installing this requisite to skip it.
