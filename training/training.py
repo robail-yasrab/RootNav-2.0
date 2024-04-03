@@ -177,7 +177,7 @@ def train(args):
     i = start_iter
     flag = True
     bce_criterion = torch.nn.CrossEntropyLoss(weight=class_weights).to(device)
-    mse_criterion = torch.nn.MSELoss(redution='mean').to(device)
+    mse_criterion = torch.nn.MSELoss(reduction='mean').to(device)
 
     print ("Starting training")
     while i <= cfg['training']['train_iters'] and flag:
