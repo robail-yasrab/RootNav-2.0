@@ -11,7 +11,7 @@ def image_output(mask, realw, realh, key, channel_bindings, output_dir, segmenta
     decoded = Image.fromarray(np.uint8(decoded*255), 'RGBA')
     basewidth = int(realw)
     hsize = int(realh)
-    decoded = decoded.resize((basewidth, hsize), Image.ANTIALIAS)
+    decoded = decoded.resize((basewidth, hsize), Image.LANCZOS)
     decoded.save(os.path.join(output_dir, "{0}_Color_output.png".format(key)))
 
     if segmentation_images:
