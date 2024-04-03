@@ -1,15 +1,5 @@
-# RootNav 2.0
-This is the RootNav 2.0 Code repository. This README and the repository code are being improved daily as we prepare for publication, please check back for new features and documentation soon!
-
-### 24th August 2020 - Version 2.1
-Version 2.1 makes substantial improvements to the training code for RootNav 2, making it easier to train the tool on new datasets. Features include:
-* Simplified folder structure, simply pass `train` and `valid` folders that contain images and RSML descriptions of the root systems.
-* Masks for training are now created by default when training begins, and cached for future runs. Only RSML is required.
-* Once training is complete, you can publish a model to be used within RootNav 2 using the `training.py publish` function.
-
-### Longer term features
-* Additional trained models. If you have datasets you'd like to see work with the tool and aren't covered by our examples, please get in touch and we can collaborate!
-* Improved model and training code. We will continuously review the model architectures and training code to explore ways to increase performance.
+# RootNav 2.1
+This is the RootNav 2.1 Code Branch. This README and the code in this branch is being improved before being pulled back to the main code repository. Here we are trying to implement improvements dependencies, including making install easier.
 
 ## Installing RootNav 2.0 
 You will first need to download the code, either as a zip above, or by cloning the git repository (recommended):
