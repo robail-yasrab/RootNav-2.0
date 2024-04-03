@@ -5,9 +5,6 @@ Use lr=0.01 for current version
 '''
 import torch.nn as nn
 import torch.nn.functional as F
-#print 'hourglass biu biu'
-# from .preresnet import BasicBlock, Bottleneck
-
 
 __all__ = ['HourglassNet', 'hg']
 class ResBlock(nn.Module):
@@ -89,7 +86,6 @@ class Bottleneck(nn.Module):
 
         return out
 
-
 class Hourglass(nn.Module):
     def __init__(self, block, num_blocks, planes, depth):
         super(Hourglass, self).__init__()
@@ -131,7 +127,6 @@ class Hourglass(nn.Module):
     def forward(self, x):
         return self._hour_glass_forward(self.depth, x)
 
-
 class HourglassNet(nn.Module):
     '''Hourglass model from Newell et al ECCV 2016'''
     def __init__(self, block, num_stacks=1, num_blocks=1, num_classes=5):
@@ -140,8 +135,7 @@ class HourglassNet(nn.Module):
         self.inplanes = 64
         self.num_feats = 64
         self.num_stacks = num_stacks
-        self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=7, stride=2, padding=3,
-                               bias=True)
+        self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=7, stride=2, padding=3, bias=True)
         self.bn1 = nn.BatchNorm2d(self.inplanes) 
         self.relu = nn.ReLU(inplace=True)
         self.layer1 = self._make_residual(block, self.inplanes, 1)
@@ -152,10 +146,6 @@ class HourglassNet(nn.Module):
         self.tail_bn2 = nn.BatchNorm2d(128)
 
 
-
-
-        #print num_stacks
-        #print num_blocks
         # build hourglass modules
         ch = self.num_feats*block.expansion
         hg, res, fc, score, fc_, score_ = [], [], [], [], [], []
@@ -213,9 +203,6 @@ class HourglassNet(nn.Module):
         x= self.tail_deconv2(x)
         x = self.tail_bn2(x)
 
-
- 
-
         for i in range(self.num_stacks):
             y = self.hg[i](x)
             y = self.res[i](y)
@@ -229,8 +216,6 @@ class HourglassNet(nn.Module):
 
         return out
 
-
 def hg(**kwargs):
-    model = HourglassNet(Bottleneck, num_stacks=1, num_blocks=1,
-                         num_classes=6)
+    model = HourglassNet(Bottleneck, num_stacks=1, num_blocks=1, num_classes=6)
     return model

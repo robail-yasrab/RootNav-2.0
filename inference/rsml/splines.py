@@ -47,7 +47,7 @@ def linear_sample(pts, max_segment_length):
 
     segment_count = int(math.ceil(cumul[-1] / max_segment_length))
     knot_count = segment_count + 1
-    #print segment_count, max_segment_length
+
     if segment_count == 0:
         segment_count = 1
     control_spacing = cumul[-1] / segment_count
@@ -132,21 +132,3 @@ class Spline():
         
         # Resample as polyline
         return linear_sample(spline_points, sample_spacing)
-
-'''if __name__ == "__main__":
-    # Create example data
-    points = [(27,39),(54,26),(83,37),(108,29),(135,42),(161,67),(151,100),(116,80),(69,69),(30,91),(21,139),(61,170),(113,174),(148,149),(119,115),(71,112),(73,139),(106,146)]
-
-    # Create a new spline based on "points" with a tension of 0 and
-    # knots spaced at 30px intervals
-    s = Spline(points, tension = 0, knot_spacing = 30)
-
-    # Convert this spline to a polyline with samples every 1 unit length
-    poly = s.polyline(sample_spacing = 1)
-
-    # Plot
-    import matplotlib.pyplot as plt
-    plt.plot([a[0] for a in points],[a[1] for a in points],'-')
-    plt.plot([c[0] for c in s.knots],[c[1] for c in s.knots],'X')
-    plt.plot([c[0] for c in poly],[c[1] for c in poly],'-')
-    plt.show()'''

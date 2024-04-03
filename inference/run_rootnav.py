@@ -1,10 +1,10 @@
-import time
-import sys, os
+import time, sys, os, argparse
 import torch
 from torch.nn.functional import softmax
-import argparse
 import numpy as np
-import scipy.misc as misc
+import imageio as iio
+from PIL import Image
+from PIL.Image import BICUBIC
 from torch.autograd import Variable
 from utils import nonmaximalsuppression as nms, rrtree
 from utils import image_output, distance_map, distance_to_weights
@@ -17,11 +17,10 @@ from crf import CRF
 n_classes = 6
 fileExtensions = set([".JPG", ".JPEG", ".PNG", ".TIF", ".TIFF", ".BMP" ])
 
-def run_rootnav(model_data, use_cuda, use_crf, input_dir, output_dir, no_segmentation_images):
+def run_rootnav(model_data, use_cuda, input_dir, output_dir, segmentation_images):
     
     # Load parameters
     model = model_data['model']
-    multi_plant = model_data['configuration']['multi-plant']
 
     pathing_config = model_data['configuration']['pathing']    
     primary_spline_params = pathing_config['spline-config']['primary']
@@ -45,7 +44,8 @@ def run_rootnav(model_data, use_cuda, use_crf, input_dir, output_dir, no_segment
 
             print ('Now Reading {0}'.format(name))
             sys.stdout.flush()
-            img = misc.imread(file)
+            img = iio.imread(file)
+            pil_img = Image.fromarray(img) if len(img.shape) == 3 else  Image.fromarray(img).convert("RGB")
 
             ####################### RESIZE #########################################
             realh, realw = img.shape[:2]
@@ -54,16 +54,15 @@ def run_rootnav(model_data, use_cuda, use_crf, input_dir, output_dir, no_segment
             factor1 = realh / 512.0
             factor2 = realw / 512.0
 
-            resized_img = misc.imresize(img, (net_output_size, net_output_size), interp='bicubic')
-            orig_size = img.shape[:-1]
-
-            img = misc.imresize(img, (net_input_size, net_input_size))
+            resized_img = np.array(pil_img.resize((net_output_size, net_output_size),resample=BICUBIC))
+            img = np.array(pil_img.resize((net_input_size, net_input_size)))
 
             ########################### IMAGE PREP #################################
             if normalisation_scale != 1:
                 img = img.astype(float) * normalisation_scale
             # NHWC -> NCHW
-            img = img.transpose(2, 0, 1)
+
+            img = np.transpose(img,(2, 0, 1))
             img = np.expand_dims(img, 0)
             img = torch.from_numpy(img).float()
 
@@ -74,6 +73,7 @@ def run_rootnav(model_data, use_cuda, use_crf, input_dir, output_dir, no_segment
                 images = Variable(img, requires_grad=False)
 
             ######################## MODEL FORWARD #################################
+
             model_output = model(images)[-1].data.cpu()
             model_softmax = softmax(model_output, dim=1)
             
@@ -83,7 +83,7 @@ def run_rootnav(model_data, use_cuda, use_crf, input_dir, output_dir, no_segment
             
             ################################# CRF ##################################
             # Apply CRF
-            mask = CRF.ApplyCRF(model_softmax.squeeze(0), resized_img, use_crf)
+            mask = CRF.ApplyCRF(model_softmax.squeeze(0), resized_img)
             
             # Primary weighted graph
             pri_gt_mask = CRF.decode_channel(mask, [segmap_config['Primary'],heatmap_config['Seed']])
@@ -123,7 +123,7 @@ def run_rootnav(model_data, use_cuda, use_crf, input_dir, output_dir, no_segment
 
             # Search across primary roots
             for tip in primary_tips:
-                path,plant_id = AStar_Pri(tip, primary_goal_dict, von_neumann_neighbors, manhattan, manhattan, primary_weights, pathing_config['max-primary-distance'])
+                path,plant_id = AStar_Pri(tip, primary_goal_dict, von_neumann_neighbors, manhattan, primary_weights, pathing_config['max-primary-distance'])
                 if path !=[]:
                     scaled_primary_path = [(x*factor2,y*factor1) for (x,y) in reversed(path)]
                     primary_root = Root(scaled_primary_path, spline_tension = primary_spline_params['tension'], spline_knot_spacing = primary_spline_params['spacing'])
@@ -138,7 +138,7 @@ def run_rootnav(model_data, use_cuda, use_crf, input_dir, output_dir, no_segment
 
             # Search across lateral roots
             for idxx, i in enumerate(lateral_tips):
-                path, pid = AStar_Lat(i, lateral_goal_dict, von_neumann_neighbors, manhattan, manhattan, lateral_weights, pathing_config['max-lateral-distance'])
+                path, pid = AStar_Lat(i, lateral_goal_dict, von_neumann_neighbors, lateral_weights, pathing_config['max-lateral-distance'])
                 if path !=[]:
                     scaled_lateral_path = [(x*factor2,y*factor1) for (x,y) in reversed(path)]
                     lateral_root = Root(scaled_lateral_path, spline_tension = lateral_spline_params['tension'], spline_knot_spacing = lateral_spline_params['spacing'])
@@ -151,12 +151,12 @@ def run_rootnav(model_data, use_cuda, use_crf, input_dir, output_dir, no_segment
                 # No viable primary roots found for any plant
                 print ("No valid paths found between tips and seed locations - no output")
                 continue
-
+            
             # Output to RSML
             RSMLWriter.save(key, output_dir, plants)
 
             # Output images
-            image_output(mask, realw, realh, key, net_config['channel-bindings'], output_dir, no_segmentation_images)
+            image_output(mask, realw, realh, key, net_config['channel-bindings'], output_dir, segmentation_images)
 
             ############################# Total time per Image ######################
             print("RSML and mask output saved in: {0}".format(output_dir))

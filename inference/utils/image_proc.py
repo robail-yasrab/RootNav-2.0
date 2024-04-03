@@ -1,13 +1,11 @@
 import os
 import numpy as np
-import scipy.misc as misc
 from PIL import Image
-from os import path
 from crf import CRF
 from scipy import ndimage
 
 n_classes = 6
-def image_output(mask, realw, realh, key, channel_bindings, output_dir, no_segmentation_images):
+def image_output(mask, realw, realh, key, channel_bindings, output_dir, segmentation_images):
     ######################## COLOR GT #################################
     decoded = decode_segmap(np.array(mask, dtype=np.uint8))
     decoded = Image.fromarray(np.uint8(decoded*255), 'RGBA')
@@ -16,18 +14,14 @@ def image_output(mask, realw, realh, key, channel_bindings, output_dir, no_segme
     decoded = decoded.resize((basewidth, hsize), Image.ANTIALIAS)
     decoded.save(os.path.join(output_dir, "{0}_Color_output.png".format(key)))
 
-    if not no_segmentation_images:
+    if segmentation_images:
         ######################## Primary root GT ###########################
         decoded1 = CRF.decode_channel(mask, [channel_bindings['segmentation']['Primary'],channel_bindings['heatmap']['Seed']])
-        decoded1 = Image.fromarray(decoded1)
-        decoded1 = decoded1.resize((basewidth, hsize), Image.NEAREST)
-        decoded1= decoded1.convert('L')
+        decoded1 = Image.fromarray(decoded1).resize((basewidth, hsize), Image.NEAREST).convert('L')
         decoded1.save(os.path.join(output_dir, "{0}_C1.png".format(key)))
         ######################## Lat root GT ###########################
         decoded2 = CRF.decode_channel(mask, channel_bindings['segmentation']['Lateral'])
-        decoded2 = Image.fromarray(decoded2)
-        decoded2 = decoded2.resize((basewidth, hsize), Image.NEAREST)
-        decoded2= decoded2.convert('L')
+        decoded2 = Image.fromarray(decoded2).resize((basewidth, hsize), Image.NEAREST).convert('L')
         decoded2.save(os.path.join(output_dir, "{0}_C2.png".format(key)))
 
 def distance_map(mask):
