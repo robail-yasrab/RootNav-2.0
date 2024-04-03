@@ -69,7 +69,7 @@ weights = [0.0007,1.6246,0.7223,0.1789,1.748,12.9261] #[0.0021,0.1861,2.3898,0.6
 def train(args):
     # Load Config
     with open(args.config) as fp:
-        cfg = yaml.load(fp)
+        cfg = yaml.load(fp, Loader=yaml.Loader)
 
     # Create log and output directory
     run_id = random.randint(1,100000)
@@ -177,7 +177,7 @@ def train(args):
     i = start_iter
     flag = True
     bce_criterion = torch.nn.CrossEntropyLoss(weight=class_weights).to(device)
-    mse_criterion = torch.nn.MSELoss(size_average=True).to(device)
+    mse_criterion = torch.nn.MSELoss(redution='mean').to(device)
 
     print ("Starting training")
     while i <= cfg['training']['train_iters'] and flag:
@@ -185,7 +185,6 @@ def train(args):
 
             i += 1
             start_ts = time.time()
-            scheduler.step()
             model.train()
             images = images.to(device)
             labels = labels.to(device)
@@ -210,6 +209,7 @@ def train(args):
             loss2.backward()
 
             optimizer.step()
+            scheduler.step()
 
             time_meter.update(time.time() - start_ts)
 
