@@ -50,7 +50,7 @@ def _download_url_to_file(url, dst, progress):
     f = tempfile.NamedTemporaryFile(delete=False)
 
     hash_prefix = None
-    pattern = ".*\/[0-9A-Za-z_]*-(?P<hashprefix>.*)\.pkl"
+    pattern = r".*\/[0-9A-Za-z_]*-(?P<hashprefix>.*)\.pkl"
     match = re.match(pattern, url)
     if match is not None:
         hash_prefix = match.groupdict()['hashprefix']
