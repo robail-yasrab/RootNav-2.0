@@ -1,0 +1,8 @@
+kdtree
+matplotlib
+numpy
+Pillow
+PyYAML
+scipy
+tensorboardX
+tqdm
