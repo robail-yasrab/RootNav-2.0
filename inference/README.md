@@ -17,7 +17,9 @@ python rootnav.py --model wheat_bluepaper input_directory output_directory
 ```
 RootNav will read any images within specified input directory, and output images and RSML to the output directory.
 
-During inference you can use the `--no_crf` flag to disable the conditional random field. The CRF was more effective during development when the network accuracy was lower. Disabling CRF now significantly improves performance for little difference in accuracy, we may make this the default in a future version. If you don't have access to a CUDA device, or the relevant drivers you can run rootnav on the CPU using the `--no_cuda` flag processing time per image will be longer, but still ~30s per image in our experience.
+In this version of the software, the conditional random field has been removed. This was found to be more effective during development when the network accuracy was lower. Disabling CRF significantly improves performance for little difference in accuracy. This dependency has also been hard to install on some operating systems.
+
+If you don't have access to a CUDA device, or the relevant drivers you can run rootnav on the CPU using the `--no_cuda` flag processing time per image will be longer, but still <30s per image in our experience.
 
 #### Quantifying Root Systems
 RootNav 2.0 doesn't measure root systems itself, it outputs architectures to RSML files, which may be analysed using a suitable tool. We have adapted the original viewer to perform this function, which you can find on github [RootNav Viewer](https://github.com/robail-yasrab/RootNav-Viewer-2.0). The benefit of separating the extraction of root systems and measurement is that additional measurements may be taken at a later date without requiring re-analysis of the original images. This makes analysing and re-analysing many root systems very straightforward. The viewer can also be extended using plugin code to capture new measurements if desired, however most common phenotypes are already built into the tool.

@@ -6,10 +6,8 @@ The training code trains new deep networks to simultaneously segment root materi
 3. Publish the trained model weights and a JSON description to the inference folder.
 4. Use the inference code to run RootNav 2 on new images.
 
-This readme assumes you have installed the requisite libraries and drivers. A CUDA compatible device is required to train otherwise training will be too slow. In addition to the dependencies listed in the main installation instructions, the training code makes use of tensorboardX to write log files during training. You can install this using:
-```
-pip install tensorboardx
-```
+This readme assumes you have installed the requisite libraries and drivers. A CUDA compatible device is required to train otherwise training will be very slow. The dependencies required can be found in requirements.txt. There are a few additional dependencies beyond those required to run Rootnav 2 in inference mode.
+
 ### Training
 Instructions on training models are given below. Note that training of deep networks can be a complex task, and experience of the process is recommended. If you would like to collaborate on the development of new models for RootNav 2.0, please [contact us](https://github.com/robail-yasrab/RootNav-2.0#contact).
 ### Dataset Preparation
