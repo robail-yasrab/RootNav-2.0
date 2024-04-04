@@ -11,7 +11,7 @@ import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
-import scipy.misc as misc
+import imageio as iio
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
@@ -29,6 +29,7 @@ from pathlib import Path
 from publish import publish
 from test import test
 from tensorboardX import SummaryWriter
+
 def decode_segmap(temp, plot=False):
     Seed = [255, 255, 255]
     P_Root = [0, 255, 0]
@@ -36,8 +37,6 @@ def decode_segmap(temp, plot=False):
     P_tip = [255, 0, 0]
     L_tip = [147, 0, 227]
     Back = [0, 0, 0]
-
-
 
     label_colours = np.array(
         [
@@ -57,13 +56,14 @@ def decode_segmap(temp, plot=False):
         g[temp == l] = label_colours[l, 1]
         b[temp == l] = label_colours[l, 2]
 
-    rgb = np.zeros((temp.shape[0], temp.shape[1], 3))
-    rgb[:, :, 0] = r / 255.0
-    rgb[:, :, 1] = g / 255.0
-    rgb[:, :, 2] = b / 255.0
+    rgb = np.zeros((temp.shape[0], temp.shape[1], 3), dtype=np.uint8)
+    rgb[:, :, 0] = r
+    rgb[:, :, 1] = g
+    rgb[:, :, 2] = b
     return rgb
+
+
 # Class weights
-           
 weights = [0.0007,1.6246,0.7223,0.1789,1.748,12.9261] #[0.0021,0.1861,2.3898,0.6323,28.6333,31.0194]
 
 def train(args):
@@ -272,7 +272,7 @@ def train(args):
                     # Output example image
                     decoded = decode_segmap(pred1)
                     out_path = 'validation_example.jpg'
-                    misc.imsave(out_path, decoded)
+                    iio.imwrite(out_path, decoded)
                     print (" Example image saved")
 
                 if score['miou'] >= best_iou:
