@@ -10,37 +10,25 @@ import collections
 
 from collections import OrderedDict
 
-def decode_segmap(temp, plot=False):
-    Seed = [255, 255, 255]
-    P_Root = [0, 255, 0]
-    L_Root = [255, 100, 100]
-    P_tip = [255, 0, 0]
-    L_tip = [147, 0, 227]
-    Back = [0, 0, 0]
+def decode_segmap(mask, channel_bindings):
+    # Color definitions
+    bg = [255, 255, 255,0]
+    lat = [0, 114, 178,255]
+    tipl = [204, 121, 115,255]
+    pri = [213, 94, 0,255]
+    tipp = [0, 158, 115,255]
+    seed = [0, 0, 0, 255]
 
-    label_colours = torch.Tensor(
-        [
-            Seed,
-            P_Root,
-            L_Root,
-            P_tip,
-            L_tip,
-            Back,
-        ]
-    )
-    r = temp.clone()
-    g = temp.clone()
-    b = temp.clone()
-    for l in range(0, 6):
-        r[temp == l] = label_colours[l, 0]
-        g[temp == l] = label_colours[l, 1]
-        b[temp == l] = label_colours[l, 2]
+    # Color mappings
+    label_map = np.zeros((6,4), dtype=np.uint8)
+    label_map[channel_bindings["segmentation"]["Background"]] = bg
+    label_map[channel_bindings["segmentation"]["Primary"]]    = pri
+    label_map[channel_bindings["segmentation"]["Lateral"]]    = lat
+    label_map[channel_bindings["heatmap"]["Seed"]]            = seed
+    label_map[channel_bindings["heatmap"]["Primary"]]         = tipp
+    label_map[channel_bindings["heatmap"]["Lateral"]]         = tipl
 
-    rgb = torch.zeros((3, temp.shape[0], temp.shape[1]))
-    rgb[0, :, :] = r / 255.0
-    rgb[1, :, :] = g / 255.0
-    rgb[2, :, :] = b / 255.0
-    return rgb
+    return label_map[mask]
 
 def dict_collate(batch):
     if isinstance(batch[0], collections.Mapping):

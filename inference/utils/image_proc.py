@@ -7,8 +7,8 @@ from scipy import ndimage
 n_classes = 6
 def image_output(mask, realw, realh, key, channel_bindings, output_dir, segmentation_images):
     ######################## COLOR GT #################################
-    decoded = decode_segmap(np.array(mask, dtype=np.uint8))
-    decoded = Image.fromarray(np.uint8(decoded*255), 'RGBA')
+    decoded = decode_segmap(np.array(mask, dtype=np.uint8), channel_bindings)
+    decoded = Image.fromarray(decoded, 'RGBA')
     basewidth = int(realw)
     hsize = int(realh)
     decoded = decoded.resize((basewidth, hsize), Image.LANCZOS)
@@ -56,39 +56,22 @@ def distance_to_weights(mask):
 
     return d
 
-def decode_segmap(temp):
-    Sky = [255, 255, 255,0]
-    Building = [0, 114, 178,255]
-    Pole = [204, 121, 115,255]
-    seed = [213, 94, 0,255]
+def decode_segmap(mask, channel_bindings):
+    # Color definitions
+    bg = [255, 255, 255,0]
+    lat = [0, 114, 178,255]
+    tipl = [204, 121, 115,255]
+    pri = [213, 94, 0,255]
     tipp = [0, 158, 115,255]
-    tipsec = [0, 0, 0, 255] #make it 0,0,0
+    seed = [0, 0, 0, 255]
 
-    label_colours = np.array(
-        [
-            Sky,
-            Building,
-            Pole,
-            seed,
-            tipp,
-            tipsec
-        ]
-    )
+    # Color mappings
+    label_map = np.zeros((6,4), dtype=np.uint8)
+    label_map[channel_bindings["segmentation"]["Background"]] = bg
+    label_map[channel_bindings["segmentation"]["Primary"]]    = pri
+    label_map[channel_bindings["segmentation"]["Lateral"]]    = lat
+    label_map[channel_bindings["heatmap"]["Seed"]]            = seed
+    label_map[channel_bindings["heatmap"]["Primary"]]         = tipp
+    label_map[channel_bindings["heatmap"]["Lateral"]]         = tipl
 
-    r = temp.copy()
-    g = temp.copy()
-    b = temp.copy()
-    a = temp.copy()
-
-    for l in range(0, n_classes):
-        r[temp == l] = label_colours[l, 0]
-        g[temp == l] = label_colours[l, 1]
-        b[temp == l] = label_colours[l, 2]
-        a[temp == l] = label_colours[l, 3]
-
-    rgba = np.zeros((temp.shape[0], temp.shape[1], 4))
-    rgba[:, :, 0] = r / 255.0
-    rgba[:, :, 1] = g / 255.0
-    rgba[:, :, 2] = b / 255.0
-    rgba[:, :, 3] = a / 255.0
-    return rgba
+    return label_map[mask]

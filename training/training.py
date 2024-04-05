@@ -11,7 +11,6 @@ import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
-import imageio as iio
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
@@ -21,47 +20,15 @@ from rootnav2.hourglass import hg
 import cv2
 from rootnav2.loss import get_loss_function
 from rootnav2.loader import get_loader 
-from rootnav2.utils import get_logger
+from rootnav2.utils import get_logger, decode_segmap
 from rootnav2.metrics import runningScore, averageMeter
 from rootnav2.schedulers import get_scheduler
 from rootnav2.optimizers import get_optimizer
 from pathlib import Path
 from publish import publish
 from test import test
+from PIL import Image
 from tensorboardX import SummaryWriter
-
-def decode_segmap(temp, plot=False):
-    Seed = [255, 255, 255]
-    P_Root = [0, 255, 0]
-    L_Root = [255, 100, 100]
-    P_tip = [255, 0, 0]
-    L_tip = [147, 0, 227]
-    Back = [0, 0, 0]
-
-    label_colours = np.array(
-        [
-            Seed,
-            P_Root,
-            L_Root,
-            P_tip,
-            L_tip,
-            Back,
-        ]
-    )
-    r = temp.copy()
-    g = temp.copy()
-    b = temp.copy()
-    for l in range(0, 6):
-        r[temp == l] = label_colours[l, 0]
-        g[temp == l] = label_colours[l, 1]
-        b[temp == l] = label_colours[l, 2]
-
-    rgb = np.zeros((temp.shape[0], temp.shape[1], 3), dtype=np.uint8)
-    rgb[:, :, 0] = r
-    rgb[:, :, 1] = g
-    rgb[:, :, 2] = b
-    return rgb
-
 
 # Class weights
 weights = [0.0007,1.6246,0.7223,0.1789,1.748,12.9261] #[0.0021,0.1861,2.3898,0.6323,28.6333,31.0194]
@@ -270,10 +237,11 @@ def train(args):
 
                 if (args.output_example):
                     # Output example image
-                    decoded = decode_segmap(pred1)
-                    out_path = 'validation_example.jpg'
-                    iio.imwrite(out_path, decoded)
-                    print (" Example image saved")
+                    channel_bindings = {'segmentation': {'Background': 0, 'Primary': 3, 'Lateral': 1}, 'heatmap': {'Seed': 5, 'Primary': 4, 'Lateral': 2}}
+                    decoded = decode_segmap(np.array(pred1, dtype=np.uint8), channel_bindings)
+                    decoded = Image.fromarray(decoded, 'RGBA')
+                    decoded.save('validation_example.png')
+                    print ("Example image saved")
 
                 if score['miou'] >= best_iou:
                     best_iou = score['miou']
