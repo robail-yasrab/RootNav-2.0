@@ -54,7 +54,6 @@ def nonmaximalsuppression(tensor, threshold):
             if val >= threshold and val >= pred_data[j+1] and val >= pred_data[j-1] and val >= pred_data[j+stride] and val >= pred_data[j-stride]:
                 points.append([(j) % stride, i // stride])
 
-    print ("Point: ", len(points))
     return points
 
 def euclid(pt1, pt2):
