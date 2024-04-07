@@ -13,12 +13,15 @@ from glob import glob
 from rsml import RSMLWriter, Plant, Root
 from models import ModelLoader
 from crf import CRF
+import logging
 
 n_classes = 6
 fileExtensions = set([".JPG", ".JPEG", ".PNG", ".TIF", ".TIFF", ".BMP" ])
 
-def run_rootnav(model_data, use_cuda, input_dir, output_dir, segmentation_images):
-    
+logger = logging.getLogger()
+
+def run_rootnav(model_data, use_cuda, args, input_dir, output_dir):
+
     # Load parameters
     model = model_data['model']
 
@@ -34,7 +37,12 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir, segmentation_images
     net_output_size = net_config['output-size']
     normalisation_scale = net_config['scale']
 
+    segmentation_images = args.segmentation_images
+
     files = glob(os.path.join(input_dir, "*.*"))
+
+    logger.debug(f"Found {len(files)} file in input directory")
+
     for file in files:
         extension = os.path.splitext(file)[1].upper()
         if extension in fileExtensions:
@@ -42,13 +50,20 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir, segmentation_images
             name = os.path.basename(file) 
             key = os.path.splitext(name)[0]
 
-            print ('Now Reading {0}'.format(name))
+            logger.info('Now processing {0}'.format(name))
             sys.stdout.flush()
-            img = iio.imread(file)
-            pil_img = Image.fromarray(img) if len(img.shape) == 3 else  Image.fromarray(img).convert("RGB")
+            #img = iio.imread(file)
+
+            pil_img = Image.open(file)
+
+            logger.debug(f"Read image, size {pil_img.size}, format {pil_img.mode}")
+
+            if (pil_img.mode != "RGB"):
+                pil_img = pil_img.convert("RGB")
+                logger.debug(f"Converting image to RGB")
 
             ####################### RESIZE #########################################
-            realh, realw = img.shape[:2]
+            realw, realh = pil_img.size
             realw = float(realw)
             realh = float(realh)
             factor1 = realh / 512.0
@@ -57,11 +72,13 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir, segmentation_images
             resized_img = np.array(pil_img.resize((net_output_size, net_output_size),resample=BICUBIC))
             img = np.array(pil_img.resize((net_input_size, net_input_size)))
 
+            logger.debug(f"Resizing image to {net_input_size}x{net_input_size}")  
+
             ########################### IMAGE PREP #################################
             if normalisation_scale != 1:
                 img = img.astype(float) * normalisation_scale
+            
             # NHWC -> NCHW
-
             img = np.transpose(img,(2, 0, 1))
             img = np.expand_dims(img, 0)
             img = torch.from_numpy(img).float()
@@ -74,6 +91,7 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir, segmentation_images
 
             ######################## MODEL FORWARD #################################
 
+            logging.debug("Processing image through network")
             model_output = model(images)[-1].data.cpu()
             model_softmax = softmax(model_output, dim=1)
             
@@ -84,7 +102,7 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir, segmentation_images
             ################################# CRF ##################################
             # Apply CRF
             mask = CRF.ApplyCRF(model_softmax.squeeze(0), resized_img)
-            
+
             # Primary weighted graph
             pri_gt_mask = CRF.decode_channel(mask, [segmap_config['Primary'],heatmap_config['Seed']])
             primary_weights = distance_map(pri_gt_mask)
@@ -94,6 +112,7 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir, segmentation_images
             lateral_weights = distance_to_weights(lat_gt_mask)
                      
             ########################## PROCESS HEATMAPS ############################
+            logging.debug("Processing output heatmaps")
             heatmap_index = ['Seed', 'Primary', 'Lateral']
             heatmap_output = model_output.index_select(1,torch.LongTensor([heatmap_config[i] for i in heatmap_index]))
             
@@ -106,13 +125,18 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir, segmentation_images
             seed_locations = rrtree(heatmap_points['Seed'], pathing_config['rtree-threshold'])
             primary_tips = rrtree(heatmap_points['Primary'], pathing_config['rtree-threshold'])
 
+
             if len(seed_locations) < 1:
-                print ("No seed location found - no output")
+                logger.warning("No seed locations found - no output")
                 continue
+            else:
+                logger.debug(f"Found {len(heatmap_points['Seed'])} raw seed locations, filtered to {len(seed_locations)} location{"" if len(seed_locations) == 1 else "s"}")
 
             if len(primary_tips) < 1:
-                print ("No first order roots found - no output")
+                logger.warning("No first order roots found - no output")
                 continue
+            else:
+                logger.debug(f"Found {len(heatmap_points['Primary'])} raw first order root tip locations, filtered to {len(primary_tips)} location{"" if len(primary_tips) == 1 else "s"}")
 
             primary_goal_dict = {pt:ix for ix,pt in enumerate(seed_locations)}
             lateral_goal_dict = {}
@@ -131,10 +155,13 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir, segmentation_images
                     primary_root_index.append(primary_root)
                     current_pid = len(primary_root_index) - 1
                     for pt in path:
-                        lateral_goal_dict[pt] = current_pid        
+                        lateral_goal_dict[pt] = current_pid
+                else:
+                    logger.debug(f"Removed primary root starting at pixel location {(round(tip[0] * factor1), round(tip[1] * factor2))} as no valid path was found")
 
             # Filter candidate lateral root tips
             lateral_tips = rrtree(heatmap_points['Lateral'], pathing_config['rtree-threshold'])
+            logger.debug(f"Found {len(heatmap_points['Lateral'])} raw first order root tip locations, filtered to {len(lateral_tips)} location{"" if len(lateral_tips) == 1 else "s"}")
 
             # Search across lateral roots
             for idxx, i in enumerate(lateral_tips):
@@ -143,13 +170,19 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir, segmentation_images
                     scaled_lateral_path = [(x*factor2,y*factor1) for (x,y) in reversed(path)]
                     lateral_root = Root(scaled_lateral_path, spline_tension = lateral_spline_params['tension'], spline_knot_spacing = lateral_spline_params['spacing'])
                     primary_root_index[pid].roots.append(lateral_root)
+                else:
+                    logger.debug(f"Removed second order root starting at pixel location {(round(i[0] * factor1), round(i[1] * factor2))} as no valid path was found")
 
             # Filter plants with no roots (E.g. incorrect seed location)
+            plant_count = len(plants)
             plants = [plant for plant in plants if plant.roots is not None and len(plant.roots) > 0]
+
+            if (plant_count != len(plants)):
+                logging.debug(f"Removed {plant_count - len(plants)} plant{"" if plant_count - len(plants) == 1 else "s"} with no roots found")
 
             if len(plants) < 1:
                 # No viable primary roots found for any plant
-                print ("No valid paths found between tips and seed locations - no output")
+                logger.warning("No valid paths found between tips and seed locations - no output")
                 continue
             
             # Output to RSML
@@ -159,10 +192,10 @@ def run_rootnav(model_data, use_cuda, input_dir, output_dir, segmentation_images
             image_output(mask, realw, realh, key, net_config['channel-bindings'], output_dir, segmentation_images)
 
             ############################# Total time per Image ######################
-            print("RSML and mask output saved in: {0}".format(output_dir))
+            logger.info(f"RSML and mask for {len(plants)} plant{"" if len(plants) == 1 else "s"} output saved in: {output_dir}")
             t1 = time.time()
             total = t1-t0
-            print ("Time elapsed: {0:.2f}s\n".format(total))
+            logger.info("Time elapsed: {0:.2f}s\n".format(total))
 
 def print_table(table):
     col_width = [max(len(x) for x in col) for col in zip(*table)]
