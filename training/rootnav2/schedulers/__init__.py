@@ -1,7 +1,4 @@
-import logging 
 from rootnav2.schedulers.schedulers import *
-
-logger = logging.getLogger('rootnav2')
 
 key2scheduler = {'constant_lr': ConstantLR,
                  'poly_lr': PolynomialLR,
@@ -12,14 +9,10 @@ key2scheduler = {'constant_lr': ConstantLR,
 
 def get_scheduler(optimizer, scheduler_dict):
     if scheduler_dict is None:
-        logger.info('Using No LR Scheduling')
         return ConstantLR(optimizer)
     
     s_type = scheduler_dict['name']
     scheduler_dict.pop('name')
-
-    logging.info('Using {} scheduler with {} params'.format(s_type,
-                                                            scheduler_dict))
 
     warmup_dict = {} 
     if 'warmup_iters' in scheduler_dict:
@@ -27,11 +20,6 @@ def get_scheduler(optimizer, scheduler_dict):
         warmup_dict['warmup_iters'] = scheduler_dict.get('warmup_iters', 100)
         warmup_dict['mode'] = scheduler_dict.get('warmup_mode', 'linear')
         warmup_dict['gamma'] = scheduler_dict.get('warmup_factor', 0.2)
-
-        logger.info('Using Warmup with {} iters {} gamma and {} mode'.format(
-                                        warmup_dict['warmup_iters'],
-                                        warmup_dict['gamma'],
-                                        warmup_dict['mode']))
 
         scheduler_dict.pop('warmup_iters', None) 
         scheduler_dict.pop('warmup_mode', None)

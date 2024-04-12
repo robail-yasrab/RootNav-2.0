@@ -20,7 +20,6 @@ from tqdm import tqdm
 from rootnav2.hourglass import hg
 import cv2
 from rootnav2.loader import get_loader 
-from rootnav2.utils import get_logger
 from rootnav2.metrics import runningScore, averageMeter, LocalisationAccuracyMeter
 from pathlib import Path
 from tensorboardX import SummaryWriter

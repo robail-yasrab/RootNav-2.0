@@ -21,7 +21,6 @@ from rootnav2.n_hourglass import hg
 import cv2
 from rootnav2.loss import get_loss_function
 from rootnav2.loader import get_loader 
-from rootnav2.utils import get_logger
 from rootnav2.metrics import runningScore, averageMeter
 from rootnav2.schedulers import get_scheduler
 from rootnav2.optimizers import get_optimizer

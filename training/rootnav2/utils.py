@@ -88,16 +88,3 @@ def convert_state_dict(state_dict):
         name = k[7:]  # remove `module.`
         new_state_dict[name] = v
     return new_state_dict
-
-
-def get_logger(logdir):
-    logger = logging.getLogger('ptsemseg')
-    ts = str(datetime.datetime.now()).split('.')[0].replace(" ", "_")
-    ts = ts.replace(":", "_").replace("-","_")
-    file_path = os.path.join(logdir, 'run_{}.log'.format(ts))
-    hdlr = logging.FileHandler(file_path)
-    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-    hdlr.setFormatter(formatter)
-    logger.addHandler(hdlr) 
-    logger.setLevel(logging.INFO)
-    return logger
