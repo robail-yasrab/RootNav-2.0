@@ -80,15 +80,6 @@ def test(args):
             outputs = model(images)[-1].data.cpu()
             total += outputs.size(0)
 
-            # from torchvision.utils import save_image
-            # save_image(images[0], "source.png")
-            # #save_image(outputs[0], 'seed_hm.png')
-            # #save_image(outputs[1], 'pri_hm.png')
-            # #save_image(outputs[2], 'lat_hm.png')
-            # save_image(decode_segmap(outputs.cpu().argmax(1)[0]), 'pred.png')
-            # save_image(decode_segmap(masks[0]), 'mask.png')
-            # exit()
-
             ##### SEGMENTATION ACCURACY #####
             # Class predictions
             pred = outputs.cpu().argmax(1).numpy()
