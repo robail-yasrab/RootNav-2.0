@@ -1,32 +1,11 @@
-import os
-import sys
 import yaml
-import time
-import shutil
 import torch
-import random
-import argparse
-import datetime
-import numpy as np
-import torch.nn as nn
-import torch.nn.functional as F
-import torchvision.models as models
-import scipy.misc as misc
-import numpy as np
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms, utils
 from torch.utils import data
-from tqdm import tqdm
 from rootnav2.hourglass import hg
-import cv2
 from rootnav2.loader import get_loader 
 from rootnav2.metrics import runningScore, averageMeter, LocalisationAccuracyMeter
-from pathlib import Path
-from tensorboardX import SummaryWriter
-from rootnav2.utils import convert_state_dict, decode_segmap, dict_collate
+from rootnav2.utils import convert_state_dict, dict_collate
 from rootnav2.accuracy import nonmaximalsuppression as nms, rrtree, evaluate_points
-import collections
-import math
 
 def test(args):
     # Load Config
@@ -56,8 +35,8 @@ def test(args):
     running_metrics = runningScore(n_classes)
 
     # Setup Model
-    print ("Loading model weights")
-    model =  hg()
+    print("Loading model weights")
+    model = hg()
     state = convert_state_dict(torch.load(args.model)["model_state"])
     model.load_state_dict(state)
     
@@ -69,7 +48,7 @@ def test(args):
     val_loss_meter = averageMeter()
     time_meter = averageMeter()
 
-    print ("Starting test")
+    print("Starting test")
     
     accuracy_meter = LocalisationAccuracyMeter(3) # Seed, Primary, Lateral
     total = 0

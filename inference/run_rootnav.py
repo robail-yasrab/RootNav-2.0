@@ -2,7 +2,6 @@ import time, sys, os, argparse
 import torch
 from torch.nn.functional import softmax
 import numpy as np
-import imageio as iio
 from PIL import Image
 from PIL.Image import BICUBIC
 from torch.autograd import Variable
@@ -52,7 +51,6 @@ def run_rootnav(model_data, use_cuda, args, input_dir, output_dir):
 
             logger.info('Now processing {0}'.format(name))
             sys.stdout.flush()
-            #img = iio.imread(file)
 
             pil_img = Image.open(file)
 

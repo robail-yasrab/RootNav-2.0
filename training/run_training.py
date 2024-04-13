@@ -5,28 +5,16 @@ import time
 import shutil
 import torch
 import random
-import argparse
 import datetime
 import numpy as np
-import torch.nn as nn
-import torch.nn.functional as F
-import torchvision.models as models
-import numpy as np
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms, utils
 from torch.utils import data
-from tqdm import tqdm
 from rootnav2.hourglass import hg
-import cv2
 from rootnav2.loss import get_loss_function
 from rootnav2.loader import get_loader 
 from rootnav2.utils import decode_segmap
 from rootnav2.metrics import runningScore, averageMeter
 from rootnav2.schedulers import get_scheduler
 from rootnav2.optimizers import get_optimizer
-from pathlib import Path
-from publish import publish
-from test import test
 from PIL import Image
 from tensorboardX import SummaryWriter
 import logging
@@ -101,7 +89,7 @@ def train(args):
     data_loader = get_loader(cfg['data']['dataset'])
     data_path = cfg['data']['path']
 
-    logger.info("Dataset Loading from", data_path)
+    logger.info(f"Dataset Loading from {data_path}")
 
     t_loader = data_loader(
         data_path,

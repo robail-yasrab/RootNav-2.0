@@ -1,4 +1,4 @@
-import sys, argparse, os
+import argparse, os
 import torch
 from models import ModelLoader
 from run_rootnav import run_rootnav, list_action, info_action
