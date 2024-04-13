@@ -1,5 +1,12 @@
-# RootNav 2.1
-This is the RootNav 2.1 Code Branch. This README and the code in this branch is being improved before being pulled back to the main code repository. Here we are trying to implement improvements dependencies, including making install easier.
+# RootNav 2
+
+RootNav 2 is a command line tool for the segmentation and analysis of root architectures in 2D. RootNav 2 is still maintained, please reach out if something doesn't work for you.
+
+## Updates 14th April 2024
+We are continuing to update RootNav 2 to make using it and training new models as simple as possible. New updates include:
+* New logging features, you can use the `--debug` flag when training or analysing images to see much more detail on what is happening
+* Updated all code to support the latest versions of PyTorch and other libraries, we have also removed the requirement for a few libraries that were no longer needed.
+* With this update, the installation should be simpler, with only a few libraries needed to install. We have changed the installation guide to better adhere to the typical ways PyTorch are installed.
 
 ## Installing RootNav 2.0 
 To install and run rootnav, you will need the following things:
