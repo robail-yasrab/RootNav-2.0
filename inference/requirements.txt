@@ -1,4 +1,3 @@
-imageio
 kdtree
 numpy
 Pillow
