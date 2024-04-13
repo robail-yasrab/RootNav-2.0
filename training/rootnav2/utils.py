@@ -31,26 +31,10 @@ def decode_segmap(mask, channel_bindings):
     return label_map[mask]
 
 def dict_collate(batch):
-    if isinstance(batch[0], collections.Mapping):
-        return {key: [d[key] for d in batch] for key in batch[0]}
-    elif torch.is_tensor(batch[0]):
-        # If we're in a background process, concatenate directly into a
-        # shared memory tensor to avoid an extra copy
-        # This is true when number of threads > 1
-        numel = sum([x.numel() for x in batch])
-        storage = batch[0].storage()._new_shared(numel)
-        out = batch[0].new(storage)
-        return torch.stack(batch, 0, out=out)
-    elif isinstance(batch[0], collections.Sequence):
-        # check to make sure that the elements in batch have consistent size
-        it = iter(batch)
-        elem_size = len(next(it))
-        if not all(len(elem) == elem_size for elem in it):
-            raise RuntimeError('each element in list of batch should be of equal size')
-        transposed = zip(*batch)
-        return tuple(dict_collate(samples) for samples in transposed)
-    else:
-        raise TypeError("BAD TYPE", type(batch[0]))
+    images = torch.utils.data.default_collate([b[0] for b in batch])
+    gt = torch.utils.data.default_collate([b[1] for b in batch])
+    ann = {key: [d[2][key] for d in batch] for key in batch[0][2]}
+    return (images, gt, ann)
 
 def recursive_glob(rootdir=".", suffix=""):
     """Performs recursive glob with given suffix and rootdir 

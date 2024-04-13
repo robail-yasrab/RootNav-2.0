@@ -31,7 +31,7 @@ import math
 def test(args):
     # Load Config
     with open(args.config) as fp:
-        cfg = yaml.load(fp)
+        cfg = yaml.load(fp, Loader=yaml.Loader)
 
     # Setup device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -105,7 +105,8 @@ def test(args):
                 # For each image in the batch
                 for batch_idx in range(outputs.size(0)):
                     current = outputs[batch_idx]
-                    pred = rrtree(nms(current[channel_idx], 0.7), 36)
+                    raw_points = nms(current[channel_idx], 0.7)
+                    pred = rrtree(raw_points, 36)
                     gt = annotations[annotation_idx][batch_idx]
                     
                     # Accuracy of current image on current channel
