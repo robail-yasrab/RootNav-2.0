@@ -1,38 +1,16 @@
-import os
-import sys
 import yaml
-import time
-import shutil
 import torch
-import random
-import argparse
-import datetime
-import numpy as np
-import torch.nn as nn
-import torch.nn.functional as F
-import torchvision.models as models
-import scipy.misc as misc
-import numpy as np
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms, utils
 from torch.utils import data
-from tqdm import tqdm
 from rootnav2.hourglass import hg
-import cv2
 from rootnav2.loader import get_loader 
-from rootnav2.utils import get_logger
 from rootnav2.metrics import runningScore, averageMeter, LocalisationAccuracyMeter
-from pathlib import Path
-from tensorboardX import SummaryWriter
-from rootnav2.utils import convert_state_dict, decode_segmap, dict_collate
+from rootnav2.utils import convert_state_dict, dict_collate
 from rootnav2.accuracy import nonmaximalsuppression as nms, rrtree, evaluate_points
-import collections
-import math
 
 def test(args):
     # Load Config
     with open(args.config) as fp:
-        cfg = yaml.load(fp)
+        cfg = yaml.load(fp, Loader=yaml.Loader)
 
     # Setup device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -57,8 +35,8 @@ def test(args):
     running_metrics = runningScore(n_classes)
 
     # Setup Model
-    print ("Loading model weights")
-    model =  hg()
+    print("Loading model weights")
+    model = hg()
     state = convert_state_dict(torch.load(args.model)["model_state"])
     model.load_state_dict(state)
     
@@ -70,7 +48,7 @@ def test(args):
     val_loss_meter = averageMeter()
     time_meter = averageMeter()
 
-    print ("Starting test")
+    print("Starting test")
     
     accuracy_meter = LocalisationAccuracyMeter(3) # Seed, Primary, Lateral
     total = 0
@@ -80,15 +58,6 @@ def test(args):
             images = images.to(device)
             outputs = model(images)[-1].data.cpu()
             total += outputs.size(0)
-
-            # from torchvision.utils import save_image
-            # save_image(images[0], "source.png")
-            # #save_image(outputs[0], 'seed_hm.png')
-            # #save_image(outputs[1], 'pri_hm.png')
-            # #save_image(outputs[2], 'lat_hm.png')
-            # save_image(decode_segmap(outputs.cpu().argmax(1)[0]), 'pred.png')
-            # save_image(decode_segmap(masks[0]), 'mask.png')
-            # exit()
 
             ##### SEGMENTATION ACCURACY #####
             # Class predictions
@@ -115,7 +84,8 @@ def test(args):
                 # For each image in the batch
                 for batch_idx in range(outputs.size(0)):
                     current = outputs[batch_idx]
-                    pred = rrtree(nms(current[channel_idx], 0.7), 36)
+                    raw_points = nms(current[channel_idx], 0.7)
+                    pred = rrtree(raw_points, 36)
                     gt = annotations[annotation_idx][batch_idx]
                     
                     # Accuracy of current image on current channel

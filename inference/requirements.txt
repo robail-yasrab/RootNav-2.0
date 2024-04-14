@@ -1,0 +1,5 @@
+kdtree
+numpy
+Pillow
+scipy
+tqdm

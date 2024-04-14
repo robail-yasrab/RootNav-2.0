@@ -1,7 +1,7 @@
 from .FibHeapQueue import FibHeap, HeapPQ
 import math
 
-def AStar_Pri(start, goal, neighbor_nodes, distance, cost_estimate, weights, max_path_length):
+def AStar_Pri(start, goal, neighbor_nodes, cost_estimate, weights, max_path_length):
     width, height = 512, 512 
     astar_weight = 0.4
 
@@ -105,7 +105,7 @@ def AStar_Pri(start, goal, neighbor_nodes, distance, cost_estimate, weights, max
     else:
         return [], []
 
-def AStar_Lat(start, goal, neighbor_nodes, distance, cost_estimate, weights, max_path_length):
+def AStar_Lat(start, goal, neighbor_nodes, weights, max_path_length):
     width, height = 512, 512 
 
     weights = weights.reshape((512*512)).tolist()

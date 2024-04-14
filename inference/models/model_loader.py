@@ -1,22 +1,9 @@
-import os
-import os.path
+import os,hashlib,tempfile,sys,shutil,re,json
 from glob import glob
-import json
 import torch
 from .hourglass import hg
 from .utils import convert_state_dict
-import hashlib
-import tempfile
-import sys
-import shutil
-import re
-
-if sys.version_info[0] == 2:
-    from urlparse import urlparse
-    from urllib2 import urlopen
-else:
-    from urllib.request import urlopen
-    from urllib.parse import urlparse
+from urllib.request import urlopen
 
 try:
     from tqdm import tqdm
@@ -63,7 +50,7 @@ def _download_url_to_file(url, dst, progress):
     f = tempfile.NamedTemporaryFile(delete=False)
 
     hash_prefix = None
-    pattern = ".*\/[0-9A-Za-z_]*-(?P<hashprefix>.*)\.pkl"
+    pattern = r".*\/[0-9A-Za-z_]*-(?P<hashprefix>.*)\.pkl"
     match = re.match(pattern, url)
     if match is not None:
         hash_prefix = match.groupdict()['hashprefix']
@@ -100,7 +87,6 @@ class ModelLoader():
         model_dir = os.path.dirname(os.path.realpath(__file__))
         files = glob("{0}/*.json".format(model_dir))
         
-        model_list = []
         for file in files:
             with open(file, 'r') as f:
                 model_json = json.loads(f.read())
@@ -210,10 +196,7 @@ class ModelLoader():
     @staticmethod
     def get_model(name, gpu=True):
         model_dir = os.path.dirname(os.path.realpath(__file__))
-        files = glob("{0}/*.json".format(model_dir))
-
         model_json = ModelLoader.load_json(name=name)
-
         supported_archs = ['hg']
 
         if model_json is None:

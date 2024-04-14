@@ -10,59 +10,31 @@ import collections
 
 from collections import OrderedDict
 
-def decode_segmap(temp, plot=False):
-    Seed = [255, 255, 255]
-    P_Root = [0, 255, 0]
-    L_Root = [255, 100, 100]
-    P_tip = [255, 0, 0]
-    L_tip = [147, 0, 227]
-    Back = [0, 0, 0]
+def decode_segmap(mask, channel_bindings):
+    # Color definitions
+    bg = [255, 255, 255,0]
+    lat = [0, 114, 178,255]
+    tipl = [204, 121, 115,255]
+    pri = [213, 94, 0,255]
+    tipp = [0, 158, 115,255]
+    seed = [0, 0, 0, 255]
 
-    label_colours = torch.Tensor(
-        [
-            Seed,
-            P_Root,
-            L_Root,
-            P_tip,
-            L_tip,
-            Back,
-        ]
-    )
-    r = temp.clone()
-    g = temp.clone()
-    b = temp.clone()
-    for l in range(0, 6):
-        r[temp == l] = label_colours[l, 0]
-        g[temp == l] = label_colours[l, 1]
-        b[temp == l] = label_colours[l, 2]
+    # Color mappings
+    label_map = np.zeros((6,4), dtype=np.uint8)
+    label_map[channel_bindings["segmentation"]["Background"]] = bg
+    label_map[channel_bindings["segmentation"]["Primary"]]    = pri
+    label_map[channel_bindings["segmentation"]["Lateral"]]    = lat
+    label_map[channel_bindings["heatmap"]["Seed"]]            = seed
+    label_map[channel_bindings["heatmap"]["Primary"]]         = tipp
+    label_map[channel_bindings["heatmap"]["Lateral"]]         = tipl
 
-    rgb = torch.zeros((3, temp.shape[0], temp.shape[1]))
-    rgb[0, :, :] = r / 255.0
-    rgb[1, :, :] = g / 255.0
-    rgb[2, :, :] = b / 255.0
-    return rgb
+    return label_map[mask]
 
 def dict_collate(batch):
-    if isinstance(batch[0], collections.Mapping):
-        return {key: [d[key] for d in batch] for key in batch[0]}
-    elif torch.is_tensor(batch[0]):
-        # If we're in a background process, concatenate directly into a
-        # shared memory tensor to avoid an extra copy
-        # This is true when number of threads > 1
-        numel = sum([x.numel() for x in batch])
-        storage = batch[0].storage()._new_shared(numel)
-        out = batch[0].new(storage)
-        return torch.stack(batch, 0, out=out)
-    elif isinstance(batch[0], collections.Sequence):
-        # check to make sure that the elements in batch have consistent size
-        it = iter(batch)
-        elem_size = len(next(it))
-        if not all(len(elem) == elem_size for elem in it):
-            raise RuntimeError('each element in list of batch should be of equal size')
-        transposed = zip(*batch)
-        return tuple(dict_collate(samples) for samples in transposed)
-    else:
-        raise TypeError("BAD TYPE", type(batch[0]))
+    images = torch.utils.data.default_collate([b[0] for b in batch])
+    gt = torch.utils.data.default_collate([b[1] for b in batch])
+    ann = {key: [d[2][key] for d in batch] for key in batch[0][2]}
+    return (images, gt, ann)
 
 def recursive_glob(rootdir=".", suffix=""):
     """Performs recursive glob with given suffix and rootdir 
@@ -100,16 +72,3 @@ def convert_state_dict(state_dict):
         name = k[7:]  # remove `module.`
         new_state_dict[name] = v
     return new_state_dict
-
-
-def get_logger(logdir):
-    logger = logging.getLogger('ptsemseg')
-    ts = str(datetime.datetime.now()).split('.')[0].replace(" ", "_")
-    ts = ts.replace(":", "_").replace("-","_")
-    file_path = os.path.join(logdir, 'run_{}.log'.format(ts))
-    hdlr = logging.FileHandler(file_path)
-    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-    hdlr.setFormatter(formatter)
-    logger.addHandler(hdlr) 
-    logger.setLevel(logging.INFO)
-    return logger

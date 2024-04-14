@@ -6,14 +6,14 @@ The training code trains new deep networks to simultaneously segment root materi
 3. Publish the trained model weights and a JSON description to the inference folder.
 4. Use the inference code to run RootNav 2 on new images.
 
-This readme assumes you have installed the requisite libraries and drivers. A CUDA compatible device is required to train otherwise training will be too slow. In addition to the dependencies listed in the main installation instructions, the training code makes use of tensorboardX to write log files during training. You can install this using:
-```
-pip install tensorboardx
-```
+This readme assumes you have installed the requisite libraries and drivers. A CUDA compatible device is required to train otherwise training will be very slow. The dependencies required can be found in requirements.txt. There are a few additional dependencies beyond those required to run Rootnav 2 in inference mode.
+
 ### Training
 Instructions on training models are given below. Note that training of deep networks can be a complex task, and experience of the process is recommended. If you would like to collaborate on the development of new models for RootNav 2.0, please [contact us](https://github.com/robail-yasrab/RootNav-2.0#contact).
+
 ### Dataset Preparation
 RootNav 2 trains on pairs of images and RSML annotations. RSML can be produced by a number of tools, but we use [RootNav 1](https://sourceforge.net/projects/rootnav/) to do this. Exactly how many images you require will depend on the nature of the images, but in our publication we successfully trained to good accuracy using transfer learning on 1-200 images. For very different datasets where transfer learning is harder, more images will be required.
+
 ### Dataset Directory Format
 The dataset should be split into training and validation sets, and an optional testing set. This follows standard convention for the training of deep networks. As an example, assuming your data is stored in a folder called `new_dataset` your folder structure would be as follows:
 ```
@@ -65,6 +65,7 @@ Primary Precision: 0.9442  Recall: 0.9556  F1: 0.9499
 Lateral Precision: 0.7237  Recall: 0.8871  F1: 0.7971
 ```
 It should be noted that these results measure the performance of the CNN only, not the full pipeline including path finding. However, a network that increases performance on these metrics is unlikely to perform worse when used within RootNav 2, and so this is a good test to use to compare two trained networks on a dataset.
+
 ### Publishing
 Training will output network weights as snapshots. RootNav 2 uses these weight files during inference according to settings described in a model JSON configuration. Examples can be found in the inference code. Once training is complete and you have a specific weight file you wish to use with the inference code, the `publish` command can help produce the necessary JSON configuration. The command is used as follows:
 
