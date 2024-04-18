@@ -128,13 +128,13 @@ def run_rootnav(model_data, use_cuda, args, input_dir, output_dir):
                 logger.warning("No seed locations found - no output")
                 continue
             else:
-                logger.debug(f"Found {len(heatmap_points['Seed'])} raw seed locations, filtered to {len(seed_locations)} location{"" if len(seed_locations) == 1 else "s"}")
+                logger.debug(f"Found {len(heatmap_points['Seed'])} raw seed locations, filtered to {len(seed_locations)} location{'' if len(seed_locations) == 1 else "s"}")
 
             if len(primary_tips) < 1:
                 logger.warning("No first order roots found - no output")
                 continue
             else:
-                logger.debug(f"Found {len(heatmap_points['Primary'])} raw first order root tip locations, filtered to {len(primary_tips)} location{"" if len(primary_tips) == 1 else "s"}")
+                logger.debug(f"Found {len(heatmap_points['Primary'])} raw first order root tip locations, filtered to {len(primary_tips)} location{'' if len(primary_tips) == 1 else "s"}")
 
             primary_goal_dict = {pt:ix for ix,pt in enumerate(seed_locations)}
             lateral_goal_dict = {}
@@ -159,7 +159,7 @@ def run_rootnav(model_data, use_cuda, args, input_dir, output_dir):
 
             # Filter candidate lateral root tips
             lateral_tips = rrtree(heatmap_points['Lateral'], pathing_config['rtree-threshold'])
-            logger.debug(f"Found {len(heatmap_points['Lateral'])} raw first order root tip locations, filtered to {len(lateral_tips)} location{"" if len(lateral_tips) == 1 else "s"}")
+            logger.debug(f"Found {len(heatmap_points['Lateral'])} raw first order root tip locations, filtered to {len(lateral_tips)} location{'' if len(lateral_tips) == 1 else "s"}")
 
             # Search across lateral roots
             for idxx, i in enumerate(lateral_tips):
@@ -176,7 +176,7 @@ def run_rootnav(model_data, use_cuda, args, input_dir, output_dir):
             plants = [plant for plant in plants if plant.roots is not None and len(plant.roots) > 0]
 
             if (plant_count != len(plants)):
-                logging.debug(f"Removed {plant_count - len(plants)} plant{"" if plant_count - len(plants) == 1 else "s"} with no roots found")
+                logging.debug(f"Removed {plant_count - len(plants)} plant{'' if plant_count - len(plants) == 1 else "s"} with no roots found")
 
             if len(plants) < 1:
                 # No viable primary roots found for any plant
@@ -190,7 +190,7 @@ def run_rootnav(model_data, use_cuda, args, input_dir, output_dir):
             image_output(mask, realw, realh, key, net_config['channel-bindings'], output_dir, segmentation_images)
 
             ############################# Total time per Image ######################
-            logger.info(f"RSML and mask for {len(plants)} plant{"" if len(plants) == 1 else "s"} output saved in: {output_dir}")
+            logger.info(f"RSML and mask for {len(plants)} plant{'' if len(plants) == 1 else "s"} output saved in: {output_dir}")
             t1 = time.time()
             total = t1-t0
             logger.info("Time elapsed: {0:.2f}s\n".format(total))
