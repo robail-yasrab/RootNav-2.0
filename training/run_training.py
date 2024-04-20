@@ -66,7 +66,7 @@ def train(args):
     # Setup device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    if device != "cuda":
+    if device.type != "cuda":
         logger.warning("No cuda available. Training will be very slow on a CPU.")
     
     # Class weights
@@ -268,8 +268,6 @@ def train(args):
                                                  cfg['model']['arch'],
                                                  cfg['data']['dataset']))
                     torch.save(state, save_path)
-
-                exit()
 
             if (i + 1) == cfg['training']['train_iters']:
                 flag = False

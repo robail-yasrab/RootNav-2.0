@@ -83,14 +83,15 @@ def gaussian_kernel_2d(size, sigma):
 
 
 def draw_gaussian_2d(img, pt, sigma):
-    height,width = img.size(0),img.size(1)
+    ptx, pty = int(round(pt[0].item())), int(round(pt[1].item()))
+    height, width = img.size(0), img.size(1)
 
     # Draw a 2D gaussian
     # Check that any part of the gaussian is in-bounds
     tmpSize = math.ceil(3 * sigma)
 
-    ul = [math.floor(pt[0] - tmpSize), math.floor(pt[1] - tmpSize)]
-    br = [math.floor(pt[0] + tmpSize), math.floor(pt[1] + tmpSize)]
+    ul = [ptx - tmpSize, pty - tmpSize]
+    br = [ptx + tmpSize, pty + tmpSize]
 
     # If not, return the image as is
     if (ul[0] >= width or ul[1] >= height or br[0] < 0 or br[1] < 0):
