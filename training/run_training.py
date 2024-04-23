@@ -148,12 +148,11 @@ def train(args):
                     )
                 )
             elif (args.resume_iterations) and checkpoint["epoch"] >= cfg['training']['train_iters']:
-                print(f"Listed target iteration number of {cfg['training']['train_iters']} is lower than the iteration number of the transfer learning model {checkpoint['epoch']}")
-                logger.error("Please rerun training without continuing iterations or by specifying a higher total number of iterations")
+                logger.error(f"Listed target iteration number of {cfg['training']['train_iters']} is lower than the iteration number of the transfer learning model {checkpoint['epoch']}. Please rerun training without continuing iterations or by specifying a higher total number of iterations")
                 exit()
         else:
             logger.warning("No checkpoint found at '{}'".format(cfg['training']['resume']))
-            print("plant models can be downloaded using the following links:")
+            logger.info("plant models can be downloaded using the following links:")
             print("https://cvl.cs.nott.ac.uk/resources/trainedmodels/arabidopsis_plate-ea874d94.pth")
             print("https://cvl.cs.nott.ac.uk/resources/trainedmodels/osr_bluepaper-083ed788.pth")
             print("https://cvl.cs.nott.ac.uk/resources/trainedmodels/wheat_bluepaper-6d109612.pth")
