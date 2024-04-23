@@ -140,14 +140,20 @@ def train(args):
             model.load_state_dict(checkpoint["model_state"])
             optimizer.load_state_dict(checkpoint["optimizer_state"])
             scheduler.load_state_dict(checkpoint["scheduler_state"])
-            start_iter = checkpoint["epoch"]
-            logger.info(
+            if (args.resume_iterations) and checkpoint["epoch"] < cfg['training']['train_iters']:
+                start_iter = checkpoint["epoch"]
+                logger.info(
                 "Loaded checkpoint '{}' (current iteration {})".format(
                     cfg['training']['resume'], checkpoint["epoch"]
+                    )
                 )
-            )
+            elif (args.resume_iterations) and checkpoint["epoch"] >= cfg['training']['train_iters']:
+                logger.error(f"Listed target iteration number of {cfg['training']['train_iters']} is lower than the iteration number of the transfer learning model {checkpoint['epoch']}. Please rerun training without continuing iterations or by specifying a higher total number of iterations")
+                exit()
         else:
             logger.warning("No checkpoint found at '{}'".format(cfg['training']['resume']))
+            logger.info("plant models can be downloaded using the following links: \n https://cvl.cs.nott.ac.uk/resources/trainedmodels/arabidopsis_plate-ea874d94.pth \n https://cvl.cs.nott.ac.uk/resources/trainedmodels/osr_bluepaper-083ed788.pth \n https://cvl.cs.nott.ac.uk/resources/trainedmodels/wheat_bluepaper-6d109612.pth")
+            exit()
 
     val_loss_meter = averageMeter()
     time_meter = averageMeter()
