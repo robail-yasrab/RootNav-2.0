@@ -152,10 +152,7 @@ def train(args):
                 exit()
         else:
             logger.warning("No checkpoint found at '{}'".format(cfg['training']['resume']))
-            logger.info("plant models can be downloaded using the following links:")
-            print("https://cvl.cs.nott.ac.uk/resources/trainedmodels/arabidopsis_plate-ea874d94.pth")
-            print("https://cvl.cs.nott.ac.uk/resources/trainedmodels/osr_bluepaper-083ed788.pth")
-            print("https://cvl.cs.nott.ac.uk/resources/trainedmodels/wheat_bluepaper-6d109612.pth")
+            logger.info("plant models can be downloaded using the following links: \n https://cvl.cs.nott.ac.uk/resources/trainedmodels/arabidopsis_plate-ea874d94.pth \n https://cvl.cs.nott.ac.uk/resources/trainedmodels/osr_bluepaper-083ed788.pth \n https://cvl.cs.nott.ac.uk/resources/trainedmodels/wheat_bluepaper-6d109612.pth")
             exit()
 
     val_loss_meter = averageMeter()
