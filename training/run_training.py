@@ -1,4 +1,5 @@
 import os
+import requests
 import sys
 import yaml
 import time
@@ -21,6 +22,25 @@ import logging
 
 # Class weights
 weights = [0.0007,1.6246,0.7223,0.1789,1.748,12.9261] #[0.0021,0.1861,2.3898,0.6323,28.6333,31.0194]
+
+def download(url: str, dest_folder: str):
+    if not os.path.exists(dest_folder):
+        os.makedirs(dest_folder)  # create folder if it does not exist
+
+    filename = url.split('/')[-1].replace(" ", "_")  # be careful with file names
+    file_path = os.path.join(dest_folder, filename)
+
+    r = requests.get(url, stream=True)
+    if r.ok:
+        print("saving to", os.path.abspath(file_path))
+        with open(file_path, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=1024 * 8):
+                if chunk:
+                    f.write(chunk)
+                    f.flush()
+                    os.fsync(f.fileno())
+    else:  # HTTP status code 4XX/5XX
+        print("Download failed: status code {}\n{}".format(r.status_code, r.text))
 
 def train(args):
     # Load Config
@@ -153,11 +173,43 @@ def train(args):
                 print("continuing from 0 instead")
         else:
             logger.warning("No checkpoint found at '{}'".format(cfg['training']['resume']))
-            print("plant models can be downloaded using the following links:")
-            print("https://cvl.cs.nott.ac.uk/resources/trainedmodels/arabidopsis_plate-ea874d94.pth")
-            print("https://cvl.cs.nott.ac.uk/resources/trainedmodels/osr_bluepaper-083ed788.pth")
-            print("https://cvl.cs.nott.ac.uk/resources/trainedmodels/wheat_bluepaper-6d109612.pth")
-            exit()
+            if cfg['training']['resume'] == "../inference/models/wheat_bluepaper.pth":
+                print(f"The selected model '{cfg['training']['resume']}' is not yet downloaded or present in the given location.")
+                print("The selected model will now be downloaded and will be used for transfer learning")
+                download("https://cvl.cs.nott.ac.uk/resources/trainedmodels/wheat_bluepaper-6d109612.pth", dest_folder="../inference/models/")
+                os.rename('../inference/models/wheat_bluepaper-6d109612.pth', '../inference/models/wheat_bluepaper.pth')
+                print("Download finished, now continuing with training")
+            elif cfg['training']['resume'] == "../inference/models/osr_bluepaper.pth":
+                print(f"The selected model '{cfg['training']['resume']}' is not yet downloaded or present in the given location.")
+                print("The selected model will now be downloaded and will be used for transfer learning")
+                download("https://cvl.cs.nott.ac.uk/resources/trainedmodels/osr_bluepaper-083ed788.pth", dest_folder="../inference/models/")
+                os.rename('../inference/models/osr_bluepaper-083ed788.pth', '../inference/models/osr_bluepaper.pth')
+                print("Download finished, now continuing with training")
+            elif cfg['training']['resume'] == "../inference/models/arabidopsis_plate.pth":
+                print(f"The selected model '{cfg['training']['resume']}' is not yet downloaded or present in the given location.")
+                print("The selected model will now be downloaded and will be used for transfer learning")
+                download("https://cvl.cs.nott.ac.uk/resources/trainedmodels/arabidopsis_plate-ea874d94.pth", dest_folder="../inference/models/")
+                os.rename('../inference/models/arabidopsis_plate-ea874d94.pth', '../inference/models/arabidopsis_plate.pth')
+                print("Download finished, now continuing with training")
+            else:
+                print(f"The selected model '{cfg['training']['resume']}' is not recognized as a prebuild model and thus cannot be automatically downloaded, adjust the transfer learning model selected in the config.")
+                print("The following models are recognized and can be used for transferlearning:")
+                print("../inference/models/wheat_bluepaper.pth   ---RECOMMENDED---")
+                print("../inference/models/osr_bluepaper.pth")
+                print("../inference/models/arabidopsis_plate.pth")
+                exit()
+            
+            checkpoint = torch.load(cfg['training']['resume'])
+            model.load_state_dict(checkpoint["model_state"])
+            optimizer.load_state_dict(checkpoint["optimizer_state"])
+            scheduler.load_state_dict(checkpoint["scheduler_state"])
+            if (args.resume_iterations) and checkpoint["epoch"] < cfg['training']['train_iters']:
+                start_iter = checkpoint["epoch"]
+                logger.info(
+                "Loaded checkpoint '{}' (current iteration {})".format(
+                    cfg['training']['resume'], checkpoint["epoch"]
+                    )
+                )
 
     val_loss_meter = averageMeter()
     time_meter = averageMeter()
