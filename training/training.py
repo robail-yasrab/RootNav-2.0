@@ -61,6 +61,7 @@ if __name__ == "__main__":
     parser_train.add_argument("--config", nargs="?", type=str, default="configs/rootnav2.yml", help="Configuration file to use")
     parser_train.add_argument('--output-example', action='store_true', help="Whether or not to output an example image each validation step")
     parser_train.add_argument('--debug', action='store_true', default=False, help='Show additional debug messages')
+    parser_train.add_argument("--resume-iterations", action='store_true', default=False, help='Resume with the iteration count from the model selected with transfer learning')
     parser_train.set_defaults(func=train)
 
     # Publish sub command
