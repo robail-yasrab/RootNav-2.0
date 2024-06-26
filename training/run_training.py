@@ -1,4 +1,6 @@
 import os
+import json
+import requests
 import sys
 import yaml
 import time
@@ -21,6 +23,38 @@ import logging
 
 # Class weights
 weights = [0.0007,1.6246,0.7223,0.1789,1.748,12.9261] #[0.0021,0.1861,2.3898,0.6323,28.6333,31.0194]
+
+def extract_url_from_json(json_file_path):
+    # Load JSON data from file
+    with open(json_file_path, 'r') as file:
+        data = json.load(file)
+    
+    # Check if the JSON data contains a 'url' key
+    try:
+        url = data['configuration']['network']['url']
+        return url
+    except KeyError:
+        print("URL not found in the specified path of the JSON file.")
+        return None
+
+def download(url: str, dest_folder: str):
+    if not os.path.exists(dest_folder):
+        os.makedirs(dest_folder)  # create folder if it does not exist
+
+    filename = url.split('/')[-1].replace(" ", "_")  # be careful with file names
+    file_path = os.path.join(dest_folder, filename)
+
+    r = requests.get(url, stream=True)
+    if r.ok:
+        print("saving to", os.path.abspath(file_path))
+        with open(file_path, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=1024 * 8):
+                if chunk:
+                    f.write(chunk)
+                    f.flush()
+                    os.fsync(f.fileno())
+    else:  # HTTP status code 4XX/5XX
+        print("Download failed: status code {}\n{}".format(r.status_code, r.text))
 
 def train(args):
     # Load Config
@@ -151,9 +185,58 @@ def train(args):
                 logger.error(f"Listed target iteration number of {cfg['training']['train_iters']} is lower than the iteration number of the transfer learning model {checkpoint['epoch']}. Please rerun training without continuing iterations or by specifying a higher total number of iterations")
                 exit()
         else:
-            logger.warning("No checkpoint found at '{}'".format(cfg['training']['resume']))
-            logger.info("plant models can be downloaded using the following links: \n https://cvl.cs.nott.ac.uk/resources/trainedmodels/arabidopsis_plate-ea874d94.pth \n https://cvl.cs.nott.ac.uk/resources/trainedmodels/osr_bluepaper-083ed788.pth \n https://cvl.cs.nott.ac.uk/resources/trainedmodels/wheat_bluepaper-6d109612.pth")
-            exit()
+            logger.warning('Model .pth file chosen for transfer learning not found at `{}` \nattempting model download'.format(cfg['training']['resume']))
+            # Path to the JSON file
+            try:
+                modelname = (cfg['training']['resume']).split('/')[-1].split('.')[0]
+                #
+                json_file_path = '../inference/models/{}.json'.format(modelname)
+                # Extract url to download
+                modelurl = extract_url_from_json(json_file_path)
+                print(modelurl)
+                if modelurl:
+                    # Download url
+                    download(modelurl, dest_folder="../inference/models/")
+                    downloadname = ('../inference/models/{}').format(modelurl.split('/')[-1])
+                    reName = ('../inference/models/{}.pth').format(modelname)
+                    os.rename(downloadname, reName)
+                    logger.info("model download successful, resuming training")
+            except:
+                logger.error("Automatic model download failed, corrosponding .json file not detected")
+                # print present models
+                logger.info("The following json/pth files are detected:")
+                for file in os.listdir("../inference/models/"):
+                    if file.endswith(".json"):
+                        # Construct the .pth filename based on the .json filename
+                        base_name = file.rsplit('.', 1)[0]  # Remove the .json extension
+                        pth_file = f"{base_name}.pth"
+                        # Check if the .pth file exists
+                        if pth_file in os.listdir("../inference/models/"):
+                            print(f"   {pth_file}")
+                        else:
+                            print(f"   {pth_file}")
+                    elif file.endswith(".pth"):
+                        # Construct the .pth filename based on the .json filename
+                        base_name = file.rsplit('.', 1)[0]  # Remove the .json extension
+                        pth_file = f"{base_name}.json"
+                        # Check if the .pth file exists
+                        if pth_file not in os.listdir("../inference/models/"):
+                            logger.warning(f"No matching .json file found for {file}.")
+                exit()                        
+            checkpoint = torch.load(cfg['training']['resume'])
+            model.load_state_dict(checkpoint["model_state"])
+            optimizer.load_state_dict(checkpoint["optimizer_state"])
+            scheduler.load_state_dict(checkpoint["scheduler_state"])
+            if (args.resume_iterations) and checkpoint["epoch"] < cfg['training']['train_iters']:
+                start_iter = checkpoint["epoch"]
+                logger.info(
+                "Loaded checkpoint '{}' (current iteration {})".format(
+                    cfg['training']['resume'], checkpoint["epoch"]
+                    )
+                )
+            elif (args.resume_iterations) and checkpoint["epoch"] >= cfg['training']['train_iters']:
+                logger.error(f"Listed target iteration number of {cfg['training']['train_iters']} is lower than the iteration number of the transfer learning model {checkpoint['epoch']}. Please rerun training without continuing iterations or by specifying a higher total number of iterations")
+                exit()
 
     val_loss_meter = averageMeter()
     time_meter = averageMeter()
