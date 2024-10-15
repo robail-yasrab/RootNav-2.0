@@ -229,6 +229,12 @@ class rootsLoader(data.Dataset):
         image = Image.open(image_path)
         cache = torch.load(cache_path)
 
+        if image.mode == 'RGBA':
+            # Split the image into individual bands
+            r, g, b, a = image.split()
+            # Create a new image without the alpha channel
+            image = Image.merge('RGB', (r, g, b))
+
         # Render heatmap
         y_scale = self.network_output_size[0] / image.height
         x_scale = self.network_output_size[1] / image.width
